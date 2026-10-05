@@ -20,7 +20,7 @@ You are a Claude Code session building the MVP from this brief. Read all of it b
   - a Google OAuth client, with its consent screen published "In production" (basic scopes), so friends aren't blocked as untrusted test users;
   - a Brevo SMTP key with one verified sender;
   - Supabase auth redirect URLs for production and Vercel previews;
-  - GitHub secrets: `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_URL`, `SUPABASE_PROJECT_REF`, `APP_URL`;
+  - GitHub secrets: `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_URL`, `SUPABASE_PROJECT_REF`, `APP_URL`, `CRON_SECRET`;
   - Vercel environment variables, including `CRON_SECRET`.
 
   The first deploy is at the end of M3. If an account isn't ready by then, carry on locally and deploy when it is.
@@ -65,12 +65,13 @@ You are a Claude Code session building the MVP from this brief. Read all of it b
 - **Honest denominator.** Each (city, country) pair is `listed`, `unlisted` or `uncharted`.
   - `listed` is computed, never stored: at least one restaurant for the pair has status `active` or `reported_closed`. A single closure report doesn't delist a country.
   - `uncharted` is a curator assertion that there's no specialist in this city. It's the list of countries London can't give you, and it's a feature. A new listing overrides it automatically.
-  - Otherwise the pair is `unlisted`: nobody has checked yet. When the last eligible restaurant closes, the country reverts to `unlisted`.
-- **Progress.** The headline is London progress: countries you've stamped *that are listed in London* over countries listed in London, for example "34 / 86 in London". A second line shows your stamps anywhere, including backfilled ones, and your points. When your London progress is still 0, the stamps-anywhere line goes first. The ISO total goes in small print.
+  - Otherwise the pair is `unlisted`: nobody has checked yet. When a restaurant becomes eligible, any stored `uncharted` row resets to `unlisted`, so the country reverts to `unlisted` if that restaurant later closes.
+- **Progress.** The headline is London progress: countries you have a visit stamp for *that are listed in London*, over countries listed in London, for example "34 / 86 in London". London progress, the group's Together bar, Gaps, Spin the globe and "First in the group!" all use visit stamps only. A second line shows your stamps anywhere, including backfilled ones, and your points. When your London progress is still 0, the stamps-anywhere line goes first. The ISO total goes in small print.
 - **No spend or frequency incentives.** Points never scale with price. No streaks.
-- **Daily cap.** At most `MAX_NEW_STAMPS_PER_DAY = 3` new stamps are *created* per user per Europe/London calendar day. That blocks bulk couch-cheating.
+- **Daily cap.** At most `MAX_NEW_STAMPS_PER_DAY = 3` visit stamps are created, claimed or upgraded per user per Europe/London calendar day, counted on `stamps.stamped_at`. That blocks bulk couch-cheating.
+  - Backfilled stamps never count toward the cap.
   - A check-in or confirmation is never refused.
-  - Over the cap, the attendance is saved with `stamp_waiting = true`, and the app says "Stamp waiting: claim it tomorrow". Claiming takes one tap from the next London day and keeps the visit's frozen bonuses.
+  - Over the cap, the attendance is saved with `stamp_waiting = true`, and the app says "Stamp waiting: claim it tomorrow". Claiming takes one tap from the next London day and keeps the visit's frozen bonuses. A claim counts toward the claim day; if that day is already full, the stamp keeps waiting.
   - Repeat visits to a stamped country never touch the cap.
 - **Permanence.** Stamps stand even if the restaurant later closes, or the friend who checked in deletes their account. The rarity bonus is frozen at check-in. Set awards, once won, are kept.
 
@@ -83,7 +84,7 @@ Implement scoring as pure TypeScript functions plus SQL (a view and Postgres fun
 | Component | Points |
 |---|---|
 | New country stamp from a visit | 10 |
-| **Rarity bonus**: depends on how many restaurants with status `active` or `reported_closed` the city has for that country *when the visit is checked in*. The visited restaurant counts, so the minimum is 1. 1 → +15, 2–3 → +10, 4–9 → +5, 10+ → 0. Stored on the visit, so everyone at the table gets the same bonus | 0–15 |
+| **Rarity bonus**: depends on how many restaurants the city has for that country *when the visit is checked in*: those with status `active` or `reported_closed`, plus the visited restaurant whatever its status, so the minimum is 1. 1 → +15, 2–3 → +10, 4–9 → +5, 10+ → 0. Stored on the visit, so everyone at the table gets the same bonus | 0–15 |
 | **Table bonus**: once ≥3 members of the visit's group have confirmed the visit, every stamp from that visit gets +5, including stamps created earlier. The person checking in counts, and so do confirmed attendees who earn no new stamp. Never removed | +5 |
 | **Signature dish**: the attendee picked, by id, an approved signature dish of the visited restaurant's country. Set when the stamp is created | +2 |
 | **Set completion**: a set is active in a city when ≥2 of its countries are listed there. Completing it means having a visit stamp for every listed country in it. Awarded once per user per set, stored in `set_awards`, never revoked | +25 per set |
@@ -93,12 +94,12 @@ Implement scoring as pure TypeScript functions plus SQL (a view and Postgres fun
   - They are self-reported, have no restaurant, and score 0 points. They never count on any leaderboard or toward a set.
   - Backfill is open any time from Settings.
   - If you later eat that country at a London restaurant, the backfilled stamp is upgraded in place into a full visit stamp: `backfilled = false`, bonuses set, and `earned_at` = the visit's time. The upgrade counts toward the cap.
-- **When set awards are checked:** whenever a stamp is created or upgraded, and whenever a restaurant's status changes. With under 100 users, recomputing everyone is fine.
+- **When set awards are checked:** whenever a stamp is created, claimed or upgraded, whenever a restaurant is inserted or its status changes, and whenever a set is edited. With under 100 users, recomputing everyone is fine.
 - **Seasons.** A group owner can set a season start and end date: inclusive, and in Europe/London time.
   - A season leaderboard counts visit stamps whose visit's `visited_at` falls in the season, and set awards whose `awarded_at` does.
   - All-time counts every visit stamp and set award.
 - **Verification is displayed, not scored.** A visit is `geo_verified` if the location check passed. Otherwise it becomes `photo` once a stripped photo is stored, and otherwise it's `self_reported`.
-  - A later photo can raise a visit, and an owner downgrade sets it to `self_reported`. Either change is copied to every stamp from that visit in the same transaction.
+  - A later photo can raise a visit, unless the owner has downgraded it. An owner downgrade sets it to `self_reported`. Either change is copied to every stamp from that visit in the same transaction.
   - The owner setting `groups.verified_only` makes leaderboards count only `geo_verified` and `photo` stamps, and the leaderboard says when it's on.
 
 **Worked example (make it a test).** Alice, Bob and Cara are in the same group and eat at Lao Café, the only listed Lao restaurant in London.
@@ -121,7 +122,7 @@ Sets are data the curator can edit, seeded from `seed/sets.csv`: Caucasus, Horn 
 - **Co-diners.**
   - The person checking in tags group members. Anyone who RSVPed "yes" to today's plan for this restaurant is pre-selected.
   - Each tagged person gets a pending attendance and confirms it in one tap. The confirm sheet has the dish picker (the country's approved dishes, plus "something else") and the 1–5 rating above the Confirm button.
-  - Pending confirmations show as a banner whenever the app opens. After checking in, "Nudge the table" shares a `wa.me` link to the confirm page.
+  - Pending confirmations show as a banner whenever the app opens. "Nudge the table" shares a `wa.me` link to the confirm page. It appears after checking in and on any feed item that still has pending attendees.
   - The window is 7 days, enforced lazily: confirm is refused after 7 days, and older pending rows count as declined. No scheduler is needed.
 - **Stamp moment.** The checker's stamp is created at check-in. It shows the points known so far, "+5 when N more confirm", and "First in the group!" if no other member has that country.
 - **Photo** (optional; built in M4).
@@ -132,7 +133,7 @@ Sets are data the curator can edit, seeded from `seed/sets.csv`: Caucasus, Horn 
   - Andrew repeats the check with real iPhone photos, including HEIC, on the deployed app at launch.
 - **Banter.**
   - Group members react to feed items with 👏, 🤤 or 🤨. A 🤨 shows as a count, never with names.
-  - The group owner sees a private list of flagged visits: those with a 🤨 and no `flag_resolved_at`. The owner can downgrade the visit to `self_reported` or dismiss the flag; both set `flag_resolved_at`, and a new 🤨 reopens it.
+  - The group owner sees a private list of flagged visits. A visit is flagged if it has a 🤨 newer than its `flag_resolved_at` (or any 🤨 if that is null). The owner can downgrade the visit to `self_reported` or dismiss the flag; both set `flag_resolved_at`.
   - There is no public shaming UI.
 - **Speed.** The whole flow takes under 30 seconds, one-handed, on poor signal. Save the check-in first and upload the photo afterwards. Show the stamp straight away and reconcile once the server confirms.
 
@@ -150,10 +151,12 @@ Adjust names if needed, but keep the semantics. User references such as `created
 - `profiles(user_id pk → auth.users, display_name, avatar_url, is_curator bool default false)`
 - `groups(id, name, owner_id, invite_code, verified_only bool, season_start date null, season_end date null)`
 - `group_members(group_id, user_id, role enum(owner, member), joined_at)`
-- `visits(id, restaurant_id, group_id not null, created_by, visited_at, verification enum, distance_m int null, rarity_bonus int, photo_path null, flag_resolved_at timestamptz null)`
+- `visits(id, restaurant_id, group_id not null, created_by, visited_at, verification enum, distance_m int null, rarity_bonus int, photo_path null, flag_resolved_at timestamptz null, downgraded_at timestamptz null)`
 - `visit_attendees(visit_id, user_id, status enum(pending, confirmed, declined), confirmed_at, signature_dish_id null → signature_dishes, dish_other text null, rating smallint null check 1–5, note text null, stamp_waiting bool default false)`. The person checking in gets a confirmed row.
 - `reactions(visit_id, user_id, emoji enum(clap, drool, side_eye), created_at)`, unique on (visit_id, user_id, emoji).
-- `stamps(user_id, country_iso2, visit_id null, earned_at, base int, rarity_bonus int, table_bonus int, dish_bonus int, verification enum, backfilled bool)`, unique on (user_id, country_iso2).
+- `stamps(user_id, country_iso2, visit_id null, earned_at, stamped_at timestamptz null, base int, rarity_bonus int, table_bonus int, dish_bonus int, verification enum, backfilled bool)`, unique on (user_id, country_iso2).
+  - `earned_at` is the visit's `visited_at`, or the backfill time.
+  - `stamped_at` is when a visit stamp was created, claimed or upgraded; the daily cap counts it. It is null for backfill.
   - The stamp functions create a stamp when an attendance becomes confirmed (the checker's at check-in), if the user has no visit stamp for that country yet. A backfilled stamp is upgraded instead.
   - If the cap would be exceeded, the attendance is marked `stamp_waiting` instead. A waiting or capped attendance never blocks a stamp at a later visit.
   - The functions take `pg_advisory_xact_lock` on the user id, so concurrent confirmations can't both pass the cap.
@@ -167,10 +170,13 @@ Adjust names if needed, but keep the semantics. User references such as `created
 Reads:
 - Any signed-in user can read countries, cities, `city_countries` and its view, restaurants, sets and approved dishes.
 - Members of a group can read its `groups` and `group_members` rows, its plans and RSVPs, and its visits, attendees and reactions.
-- People who share a group can read each other's `profiles`, `stamps`, `set_awards` and photos (via a Storage policy).
+- People who share a group can read each other's `profiles`, `stamps` and `set_awards`.
+- Photos are readable only by members of the visit's group, via a Storage policy.
 
 Writes:
-- `stamps`, `set_awards`, `visit_attendees.stamp_waiting`, and the `verification`, `distance_m` and `rarity_bonus` columns of `visits` have no client write policies. Only SECURITY DEFINER functions write them: check-in, confirm, claim, backfill, photo and downgrade.
+- `visits`, `visit_attendees`, `stamps` and `set_awards` have no client INSERT, UPDATE or DELETE policies. Only SECURITY DEFINER functions write them: check-in, confirm, claim, backfill, photo, downgrade and dismiss-flag. `visited_at` is set to now() at check-in.
+- `create_group(name)` makes the caller owner and generates the `invite_code`. Only the owner, through a function, changes a group's name, `verified_only`, season dates or `invite_code`.
+- Members can insert plans for their group. Only the proposer or the owner can update a plan.
 - Users can update their own `profiles` row, but not `is_curator`: revoke column UPDATE on it from `authenticated`. The README gives the one SQL statement that makes Andrew curator.
 - Joining a group goes only through `join_group(invite_code)`, which also enforces the 20-member limit. There is no direct insert into `group_members`. Members can't change `role` or `groups.owner_id`.
 - Only the check-in function inserts `visit_attendees`. Each user changes only their own row, through the confirm function.
@@ -207,7 +213,7 @@ Writes:
    - **Plan a dinner**: restaurant and date, RSVP yes/no/maybe, an "Add to calendar" `.ics` download, and "Share to WhatsApp".
    - The owner's flag list (section 4).
 8. **Curator** (role-gated). Submissions queue, closure reports, restaurant edit, city-country status, and editors for sets and signature dishes.
-9. **Settings.** Display name and avatar, backfill, the privacy and credits pages, and Delete account.
+9. **Settings.** Display name and avatar, backfill, Create group (also offered on an empty passport), the privacy and credits pages, and Delete account.
 
 **Recap card.** After a check-in, render a PNG with the flags, the people at the table, the dish, the rating and the points. Share it with `navigator.share({ files })` from the tap handler, after checking `navigator.canShare`; that works in Safari/iOS 14+ and Chrome Android 76+. Otherwise download the PNG or open a `wa.me` text link.
 
@@ -262,7 +268,7 @@ Pin these major versions, and run `npm view` before installing to pick up patch 
   - A short privacy page says who runs the app and how to get data deleted.
 - **Account deletion.**
   - It removes the user's profile, group memberships, attendances, reactions, RSVPs, stamps and set awards.
-  - A visit the user created is deleted only if nobody else confirmed it. Otherwise it stays, with `created_by` set to null and its photo deleted, so co-diners keep their attendances and stamps. Other users' stored points are never recomputed.
+  - A visit the user created is deleted only if nobody else is confirmed or pending on it. Otherwise it stays, with `created_by` set to null and its photo deleted, so co-diners keep their attendances and stamps. Other users' stored points are never recomputed.
   - If the user owns a group, ownership passes to the longest-standing member. A group with no other members is deleted.
 - **Credits.** The README and the in-app credits page cover the sources that require it: the country dataset (CC BY-SA 4.0), postcodes.io (OS, Royal Mail, ONS), OpenStreetMap, Natural Earth/world-atlas and flag-icons.
 
@@ -287,7 +293,7 @@ It never updates a row that already exists, so re-running it can't overwrite cur
    - If a postcode doesn't resolve, try `GET /terminated_postcodes/{postcode}`, which still returns coordinates, and log a warning naming the restaurant. If neither resolves, **fail loudly**.
    - Every seed postcode is currently live: the fact-check replaced the two terminated ones. Cover the fallback with a test using EC1V 1LP, which was terminated in March 2015.
    - Seed rows import with status `active`, and `verified_at` stays null until the curator has checked each row personally.
-4. **City statuses.** `city_countries` for London: `unlisted` for every country without a seeded restaurant. Listed countries come from the view.
+4. **City statuses.** `city_countries` for London: one `unlisted` row for each of the 249 countries. The view derives which are listed.
 5. **Sets.** `seed/sets.csv`: 12 sets, with country codes separated by spaces.
 6. **Signature dishes.** `seed/signature-dishes.csv`: 140 dishes for the 40 countries checked. Senegal's stay ready for when it's listed again. Andrew reviews them in the brief's PR, so they import as `approved`, and the curator can demote any of them later.
 
@@ -305,11 +311,11 @@ Each milestone ends with passing CI, committed phone screenshots and a short dem
 
 1. **Foundations.**
    - The Supabase local stack, schema, RLS policies, the seed script, and GitHub Actions CI (Vitest, `supabase test db`, Playwright).
-   - pgTAP tests show that a non-member can't read another group's visits, stamps or photos.
+   - pgTAP tests show that a non-member can't read another group's visits or photos, and that a user who shares no group with someone can't read their stamps.
    - They also show that a normal user can't insert a stamp, set `is_curator`, join a group without its invite code, or add themselves to someone else's visit.
-2. **Join and browse.** Auth (local email capture in development), profiles, groups, invite links and `join_group`, backfill, and the Passport, Country, Restaurant and Settings pages.
-3. **Check-in and scoring.** The check-in flow (group, location, co-diners, confirm sheet, nudge, waiting stamps), stamp creation, scoring functions and view, and the stamp moment. Then the first deploy. Tests cover:
-   - rarity frozen at check-in and the same for everyone at the table, with a minimum of 1 if the restaurant has since closed;
+2. **Join and browse.** Auth (local email capture in development), profiles, groups (`create_group`, invite links, `join_group`), backfill, and the Passport, Country, Restaurant and Settings pages.
+3. **Check-in and scoring.** The check-in flow (group, location, co-diners, confirm sheet, nudge, waiting stamps), stamp creation, scoring functions and view, and the stamp moment. Then the first deploy, with a GitHub Action that runs `supabase db push` on every merge to `main`. Tests cover:
+   - rarity frozen at check-in and the same for everyone at the table, with a minimum of 1 even when the visited restaurant is `closed` at check-in;
    - the table bonus reaching every stamp when the third person confirms, in any order, and never with only two;
    - the dish bonus only for an approved dish picked by id;
    - set activation (≥2 listed), completion and permanence: once per user per set, with backfilled stamps not counting;
@@ -317,7 +323,7 @@ Each milestone ends with passing CI, committed phone screenshots and a short dem
    - over-cap stamps waiting and being claimable the next day;
    - a capped attendance not blocking a later stamp;
    - two concurrent confirmations not both passing the cap;
-   - backfilled stamps scoring 0 and being upgraded in place by a visit;
+   - backfilled stamps scoring 0, never counting toward the cap, and being upgraded in place by a visit;
    - a declined or lapsed attendee getting no stamp;
    - an owner downgrade reaching every stamp from the visit;
    - the worked example in section 3, including Alice deleting her account.
@@ -352,7 +358,7 @@ Public profiles or discovery, native apps, cities other than London (the schema 
 
 ## 13. Definition of done
 
-Claude runs this flow with Playwright at 390×844 against the deployed URL, then gives Andrew a short checklist to repeat it on real phones and sign off:
+Claude runs this flow with Playwright at 390×844 against the deployed URL. The test creates two throwaway users with the service-role key, signs them in with `auth.admin.generateLink`, and removes them afterwards through account deletion. Claude then gives Andrew a short checklist to repeat the flow on real phones, including the Google sign-in, and sign off:
 
 1. A new friend opens an invite link, signs in with Google and backfills past countries.
 2. They see their passport with the London denominator.
