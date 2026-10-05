@@ -7,3 +7,6 @@ A personal, non-commercial game for a group of friends. Not an Origin Sciences p
 - Models: Claude subscription only. No Bedrock or other external model APIs.
 - Hosting: Vercel Hobby + Supabase Free. Ask before adding anything that costs money.
 - When fun and rigour conflict, pick fun. The privacy and RLS rules in the brief stay hard requirements.
+- Architecture contract (tables, Postgres functions, routes): `docs/architecture.md`.
+
+@AGENTS.md
