@@ -38,11 +38,11 @@ Import from `@/components/ui` (or the file directly).
 - `Avatar name src`: initials fallback; plain `<img>`, never `next/image`. Shows a photo only from Google or Supabase Storage (matches the `profiles_avatar_url` trigger).
 - `Skeleton`, `PageSkeleton label`: for `loading.tsx`. Root `not-found.tsx` and `error.tsx` (with `retry()`) catch dead ends app-wide.
 
-Nav (`src/components/nav`): `TopBar` and `BottomNav` are rendered by the root layout for signed-in users; pages don't add them. They hide on the prefixes in `CHROME_HIDDEN_PREFIXES` (`chrome.ts`). `main` already pads for the bottom nav; sticky footers sit at `bottom-[calc(4.5rem+env(safe-area-inset-bottom))]`.
+Nav (`src/components/nav`): `TopBar` and `BottomNav` are rendered by the root layout for signed-in users; pages don't add them. They hide on the prefixes in `CHROME_HIDDEN_PREFIXES` (`chrome.ts`): `/login`, `/auth/` and the full-screen check-in stepper `/check-in/` (the `/check-in` picker keeps them). `BottomNav` adds a spacer for itself; sticky footers sit at `bottom-[calc(4.5rem+env(safe-area-inset-bottom))]`, or at `bottom-0` with the safe-area inset on a chrome-hidden screen.
 
 ## Auth helpers (`src/components/auth/session.ts`, server only)
 
-`requireUser(returnTo)` (redirects to `/login?next=`), `getSessionUser()`, `getMyProfile()`, `friendlyError(error, fallback)` for showing SQL `raise exception` messages. `safeNext()`, `loginUrl()`, `redirectTo()`, `CHECK_IN_LIVE` and `APP_NAME` live in `src/lib/app.ts`. `safeNext()` is idempotent and never returns `//host`, so pass any user-supplied path through it before `redirect()` or `router.push()`. `CHECK_IN_LIVE` stays false until M3 ships `/check-in` and `/visit`; M3 flips it. Passport maths is the pure `summarisePassport()` in `src/lib/passport.ts`; region order (`REGION_ORDER`) is in `src/lib/countries.ts`. The proxy (`src/proxy.ts`) refreshes the session and redirects signed-out page visits; every page and server action must still check the user.
+`requireUser(returnTo)` (redirects to `/login?next=`), `getSessionUser()`, `getMyProfile()`, `friendlyError(error, fallback)` for showing SQL `raise exception` messages. `safeNext()`, `loginUrl()`, `redirectTo()` and `APP_NAME` live in `src/lib/app.ts`. `safeNext()` is idempotent and never returns `//host`, so pass any user-supplied path through it before `redirect()` or `router.push()`. Passport maths is the pure `summarisePassport()` in `src/lib/passport.ts`; region order (`REGION_ORDER`) is in `src/lib/countries.ts`. The proxy (`src/proxy.ts`) refreshes the session and redirects signed-out page visits; every page and server action must still check the user.
 
 ## Rules
 

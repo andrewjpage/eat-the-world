@@ -1,5 +1,9 @@
-/** Routes that render without the TopBar and BottomNav (full-screen flows). */
-export const CHROME_HIDDEN_PREFIXES = ["/login", "/auth/"];
+/**
+ * Routes that render without the TopBar and BottomNav (full-screen flows). The trailing
+ * slash on "/check-in/" hides the chrome in the stepper but keeps it on the /check-in
+ * picker, so a stray thumb on the nav can't throw away a half-done check-in.
+ */
+export const CHROME_HIDDEN_PREFIXES = ["/login", "/auth/", "/check-in/"];
 
 export function chromeHidden(pathname: string | null): boolean {
   if (!pathname) return false;
@@ -31,4 +35,12 @@ export function activeTab(pathname: string | null): NavTab["href"] | null {
     if (t.href !== "/" && (pathname === t.href || pathname.startsWith(`${t.href}/`))) return t.href;
   }
   return null;
+}
+
+/** The centre "Check in" button of the bottom nav. It is an action, not a tab. */
+export const CHECK_IN_HREF = "/check-in";
+
+/** Check-in screens: the button shows as active, no tab does. */
+export function isCheckInPath(pathname: string | null): boolean {
+  return pathname === CHECK_IN_HREF || (pathname?.startsWith(`${CHECK_IN_HREF}/`) ?? false);
 }

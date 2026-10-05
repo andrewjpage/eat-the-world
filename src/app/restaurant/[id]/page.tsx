@@ -2,14 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { CHECK_IN_LIVE } from "@/lib/app";
 import { mapsUrl } from "@/lib/maps-url";
 import { displayName } from "@/lib/countries";
 import { requireUser } from "@/components/auth/session";
 import {
   Avatar,
   Badge,
-  Button,
   ButtonLink,
   Card,
   ContestedBadge,
@@ -110,16 +108,20 @@ export default async function RestaurantPage({ params }: PageProps<"/restaurant/
       )}
 
       <div className="mb-6 flex flex-col gap-3">
-        {!closed &&
-          (CHECK_IN_LIVE ? (
-            <ButtonLink href={`/check-in/${r.id}`} size="lg" block>
+        {closed ? (
+          <>
+            <p className="text-sm text-ink-soft">
+              Marked closed. If it&apos;s open tonight, check in anyway and tell the curator.
+            </p>
+            <ButtonLink href={`/check-in/${r.id}`} variant="secondary" size="lg" block>
               Check in here
             </ButtonLink>
-          ) : (
-            <Button size="lg" block disabled>
-              Check-in opens soon
-            </Button>
-          ))}
+          </>
+        ) : (
+          <ButtonLink href={`/check-in/${r.id}`} size="lg" block>
+            Check in here
+          </ButtonLink>
+        )}
         <a
           href={mapsUrl(r)}
           target="_blank"

@@ -90,7 +90,7 @@ select has_function('public', 'join_group', array['text'], 'join_group(text)');
 select has_function('public', 'update_group_settings', array['uuid', 'text', 'boolean', 'date', 'date'], 'update_group_settings(...)');
 select has_function('public', 'rotate_invite_code', array['uuid'], 'rotate_invite_code(uuid)');
 select has_function('public', 'check_in',
-  array['uuid', 'uuid', 'double precision', 'double precision', 'double precision', 'uuid[]', 'uuid', 'text', 'smallint', 'text'],
+  array['uuid', 'uuid', 'double precision', 'double precision', 'double precision', 'uuid[]', 'uuid', 'text', 'smallint', 'text', 'uuid'],
   'check_in(...)');
 select has_function('public', 'confirm_attendance', array['uuid', 'uuid', 'text', 'smallint', 'text'], 'confirm_attendance(...)');
 select has_function('public', 'decline_attendance', array['uuid'], 'decline_attendance(uuid)');
@@ -107,7 +107,7 @@ select has_function('public', 'delete_my_account', '{}'::name[], 'delete_my_acco
 select has_function('public', 'approve_submission', array['uuid', 'double precision', 'double precision'], 'approve_submission(...)');
 select has_function('public', 'reject_submission', array['uuid', 'text'], 'reject_submission(uuid, text)');
 select function_returns('public', 'check_in',
-  array['uuid', 'uuid', 'double precision', 'double precision', 'double precision', 'uuid[]', 'uuid', 'text', 'smallint', 'text'],
+  array['uuid', 'uuid', 'double precision', 'double precision', 'double precision', 'uuid[]', 'uuid', 'text', 'smallint', 'text', 'uuid'],
   'jsonb', 'check_in returns jsonb');
 select function_returns('public', 'delete_my_account', '{}'::name[], 'text[]', 'delete_my_account returns text[]');
 

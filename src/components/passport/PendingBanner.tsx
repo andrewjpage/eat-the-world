@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { CHECK_IN_LIVE } from "@/lib/app";
 import { Flag } from "@/components/ui/Flag";
 import type { PendingItem } from "./data";
 
@@ -29,18 +28,15 @@ export function PendingBanner({ items }: { items: PendingItem[] }) {
               <span className="block text-sm font-bold text-ink">{title(it)}</span>
               <span className="block truncate text-sm text-ink-soft">
                 {it.restaurant}
-                {!CHECK_IN_LIVE && " · opens soon"}
               </span>
             </span>
-            {CHECK_IN_LIVE && (
-              <span aria-hidden className="text-lg text-stamp-red">
-                ›
-              </span>
-            )}
+            <span aria-hidden className="text-lg text-stamp-red">
+              ›
+            </span>
           </>
         );
         const key = `${it.kind}-${it.visitId}`;
-        return CHECK_IN_LIVE ? (
+        return (
           <Link
             key={key}
             href={`/visit/${it.visitId}`}
@@ -49,10 +45,6 @@ export function PendingBanner({ items }: { items: PendingItem[] }) {
           >
             {body}
           </Link>
-        ) : (
-          <div key={key} className={rowClass}>
-            {body}
-          </div>
         );
       })}
     </section>

@@ -67,8 +67,8 @@ test("country and restaurant pages render", async ({ page }) => {
     "href",
     /google\.com\/maps/,
   );
-  // M3 enables check-in (CHECK_IN_LIVE); until then the button is disabled, not a 404.
-  await expect(page.getByRole("button", { name: "Check-in opens soon" })).toBeDisabled();
+  // Check-in is live (M3): the button is a link to the stepper.
+  await expect(page.getByRole("link", { name: "Check in here" })).toHaveAttribute("href", `/check-in/${id}`);
   await expect(page).toHaveTitle(/^Lao Café · /);
 });
 

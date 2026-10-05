@@ -47,10 +47,3 @@ export function loginUrl(path: string): string {
 export function redirectTo(path: string, status: 303 | 307 = 307): Response {
   return new Response(null, { status, headers: { Location: safeNext(path, "/") } });
 }
-
-/**
- * M3 ships /check-in/[restaurantId] and /visit/[id]. Until then, the buttons and
- * banners that lead there render disabled instead of linking to a 404.
- * M3: set this to true (and update tests/e2e/m2.spec.ts) when those routes land.
- */
-export const CHECK_IN_LIVE = false;

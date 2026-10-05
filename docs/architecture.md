@@ -55,6 +55,7 @@ Tables as in brief section 5, with these exact names and the following additions
   - `city_countries (city_id, country_iso2)`
 - `reactions` and `submissions` have `created_at`. `submissions` stores the proposed `city_id`, `country_iso2`, `name`, `address`, `postcode`, `lat`, `lon`, `google_place_id`, `website` and `note`.
 - Every id is a uuid with `default gen_random_uuid()`, except `countries.iso2`.
+- `visits.client_key uuid` (nullable, unique per `created_by`): the idempotency key from `check_in`.
 - Members insert submissions directly (RLS: `submitted_by = auth.uid()`, `status = 'pending'`, caller in a group or curator); reviewer fields are curator-only.
 
 ### Views (`security_invoker = true`)
@@ -73,10 +74,10 @@ Tables as in brief section 5, with these exact names and the following additions
 | `join_group(p_invite_code text)` | uuid | Idempotent; enforces 20 members |
 | `update_group_settings(p_group_id uuid, p_name text, p_verified_only bool, p_season_start date, p_season_end date)` | void | Owner only |
 | `rotate_invite_code(p_group_id uuid)` | text | Owner only |
-| `check_in(p_restaurant_id uuid, p_group_id uuid, p_lat float8, p_lon float8, p_accuracy float8, p_tagged uuid[], p_signature_dish_id uuid, p_dish_other text, p_rating smallint, p_note text)` | jsonb `StampResult` | Location args may be null. Stores only `distance_m`. Tagged users must be members of the group. Inserts the creator's confirmed row and pending rows for tagged users |
-| `confirm_attendance(p_visit_id uuid, p_signature_dish_id uuid, p_dish_other text, p_rating smallint, p_note text)` | jsonb `StampResult` | Caller's pending row; refused after 7 days |
+| `check_in(p_restaurant_id uuid, p_group_id uuid, p_lat float8, p_lon float8, p_accuracy float8, p_tagged uuid[], p_signature_dish_id uuid, p_dish_other text, p_rating smallint, p_note text, p_client_key uuid)` | jsonb `StampResult` | Location args may be null. Stores only `distance_m`. Tagged users must be members of the group. Inserts the creator's confirmed row and pending rows for tagged users. `p_client_key` (optional) is a random uuid per check-in: a retry with the same key creates nothing and returns the first call's result |
+| `confirm_attendance(p_visit_id uuid, p_signature_dish_id uuid, p_dish_other text, p_rating smallint, p_note text)` | jsonb `StampResult` | Caller's pending row; refused after 7 days. On an already confirmed row it reports the stamp that confirmation made (a safe retry) |
 | `decline_attendance(p_visit_id uuid)` | void | |
-| `claim_stamp(p_visit_id uuid)` | jsonb `StampResult` | Caller's waiting attendance |
+| `claim_stamp(p_visit_id uuid)` | jsonb `StampResult` | Caller's waiting attendance. On an already claimed row it reports the stamp the claim made |
 | `backfill_countries(p_iso2s text[])` | int | Number created. Skips countries already stamped. Never touches the cap |
 | `remove_backfilled_stamp(p_iso2 text)` | void | Only `backfilled = true` stamps |
 | `set_visit_photo(p_visit_id uuid, p_photo_path text)` | void | Visit creator only. Raises `self_reported` to `photo` unless `downgraded_at` is set; copies to stamps |
@@ -94,7 +95,7 @@ Tables as in brief section 5, with these exact names and the following additions
 - `outcome`: `stamped`, `upgraded`, `repeat`, `waiting` or `no_change`
 - `country_iso2`
 - `points` with `{base, rarity, table, dish, total}`, or null
-- `table_pending`: how many more confirmations are needed for the table bonus, 0 once it applies
+- `table_pending`: how many more confirmations are needed for the table bonus; 0 once it applies, and 0 when it can no longer happen (fewer live pending group members than needed)
 - `first_in_group` (bool)
 - `verification`
 
@@ -160,3 +161,7 @@ After any confirmation:
 - `SUPABASE_SERVICE_ROLE_KEY` (server only; never imported in client code)
 - `CRON_SECRET`
 - `NEXT_PUBLIC_APP_URL`
+
+## First deploy checks
+
+- Coordinates reach Postgres only as bind parameters of `check_in` (PostgREST). Before friends start playing, run `show log_min_duration_statement; show log_parameter_max_length; show log_parameter_max_length_on_error;` on the cloud project and record the result in the M7 security review. If statements are logged with their parameters, ask Supabase support to turn parameter logging off for the project.

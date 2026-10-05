@@ -66,14 +66,8 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       <body className="flex min-h-full flex-col">
         <ToastProvider>
           {profile && <TopBar name={profile.display_name} avatarUrl={profile.avatar_url} />}
-          <main
-            id="main"
-            className={
-              profile
-                ? "flex flex-1 flex-col pb-[calc(4rem+env(safe-area-inset-bottom))]"
-                : "flex flex-1 flex-col"
-            }
-          >
+          {/* BottomNav renders its own spacer, so hidden-chrome screens get no gap. */}
+          <main id="main" className="flex flex-1 flex-col">
             {children}
           </main>
           {profile && <BottomNav />}
