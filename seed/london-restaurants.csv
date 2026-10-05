@@ -1,0 +1,69 @@
+country_iso2,country,restaurant,address,postcode,google_place_id,confidence,curator_note
+NG,Nigeria,Enish (Oxford Street),"3 Berners St, London",W1T 3LD,ChIJ97wxu34bdkgRnbFvkY0konM,curated,"Classic Nigerian just off Oxford Street: jollof, egusi with pounded yam, suya."
+NG,Nigeria,Akoko,"21 Berners St, London",W1T 3LP,ChIJU7uHDYcbdkgRttS28-dNO7E,flagged,Fine-dining West African tasting menu. Pan-regional rather than purely Nigerian.
+ET,Ethiopia,Zeret Kitchen,"216-218 Camberwell Rd, London",SE5 0ED,ChIJJd_nKX4DdkgRdsLXS_Ey8As,curated,"Family-run Ethiopian in Camberwell for big injera platters, with a coffee ceremony. Hours vary, so check."
+ET,Ethiopia,Gebeta Ethiopian Kitchen,"51 Leather Ln, London",EC1N 7TJ,ChIJiWL3J0wbdkgRd_MQlmXHxxY,curated,Ethiopian kitchen with coffee ceremony and monthly cultural nights.
+ER,Eritrea,Mosob,"339 Harrow Rd, London",W9 3RB,ChIJMR9KxxoQdkgRi2UM1BG9bqU,flagged,Long-running Eritrean spot reopened under new management; serves Eritrean and Ethiopian.
+ER,Eritrea,Merhaba Restaurant & Bar,"5-7 Vining St, London",SW9 8QA,ChIJx2Cl4GkFdkgRQINRJfizRpM,flagged,"Brixton spot serving Eritrean and Ethiopian food together, so not a pure Eritrean pick."
+SO,Somalia,Sabiib (Harringay),"5-6 Grand Parade, Green Lanes, London",N4 1JX,ChIJ59NWEA0bdkgRC-tA0wIulA4,curated,Sabiib's second site (June 2025). Haniid lamb shoulder with sabaayad. Fully halal.
+SO,Somalia,Sabiib (Acton),"139 High St, Acton, London",W3 6LX,ChIJvYi9nOoPdkgRuXpEniYL7Yg,curated,"Original Sabiib (June 2023). Mogadishu-inspired décor. Haniid and suqaar stars. Halal, alcohol-free."
+ZA,South Africa,High Timber,"8 High Timber St, London",EC4V 3PA,ChIJ96ezSaoEdkgRYACW4QGP4LY,flagged,"Riverside steakhouse owned by a Stellenbosch wine estate: SA wines, biltong, malva pudding. Food mostly European. Weekdays only."
+MU,Mauritius,Devi Deluxe,"147 Green Lanes, Palmers Green, London",N13 4SP,ChIJeS0oVZsZdkgRz-WreL1oe8E,curated,"Family-run Mauritian: dholl puri, bowl renverse, curries. Closed Tuesdays."
+MU,Mauritius,Dhall Puri Factory,"595 High Rd Leyton, London",E10 6PY,ChIJk6UBdI8ddkgRXs3RLmTAh1s,community,"Mauritian street food in Leyton, formerly Mauritian Delights: dhall puri, biryani, curries. Walk-ins; reportedly cash only."
+JM,Jamaica,Ma Petite Jamaica (Shoreditch),"130-132 Curtain Rd, London",EC2A 3AR,ChIJY85l2MQddkgRxvDe2ZNBNPQ,curated,"Jamaican diner with a jerk pit, curry goat and rum cocktails, plus live reggae. Second site after Camden."
+JM,Jamaica,Ma Petite Jamaica (Camden),"4 Inverness St, London",NW1 7HJ,ChIJsSGoo-EadkgRuw3X2EzVkC0,curated,"London's first Caribbean diner (2015): jerk wings, rum cocktails and reggae."
+TT,Trinidad and Tobago,Trini Vibez,"485 Kingsland Rd, London",E8 4AU,ChIJAe8UjEgddkgRnfKArH2IRXE,flagged,"Trinidadian roti shop: doubles, aloo pie, curry goat. Takeaway. Two addresses reported; phone ahead."
+PE,Peru,MAKA Peruvian Cuisine,"62 Brixton Road, London",SW9 6BS,ChIJWXUFFQAFdkgRv0y5F7TAgaY,curated,"Peruvian: ceviche, lomo saltado, causa and pisco. Closed Mon-Tue."
+PE,Peru,Señor Ceviche (Soho),"Kingly Ct, Carnaby, London",W1B 5PW,ChIJBS3jB9UEdkgRVZR_jxtt_WE,curated,Peruvian and Nikkei (Japanese-Peruvian) small plates with pisco bar at Kingly Court.
+VE,Venezuela,Papelón,"171 Ladbroke Grove, London",W10 6HJ,ChIJo0OzfUsRdkgRCRvB3KmMwfQ,community,"Venezuelan arepas, cachapas and empanadas on gluten-free corn. Street-food style, with sister sites around London."
+VE,Venezuela,Arepa & Co (Haggerston),"58A De Beauvoir Crescent, London",N1 5SB,ChIJbfH7y5ccdkgRzc6uwoS5qLE,curated,Venezuelan arepas and cachapas by Regent's Canal. Famous weekend brunch.
+CO,Colombia,El Rancho De Lalo,"1 Buckner Road, Brixton Hill, London",SW2 5BY,ChIJq_jCq2gEdkgRs_DxcY1rzfc,curated,"Family Colombian started by Lalo (2010). Bandeja paisa, empanadas, patacones. Now Brixton Hill."
+AR,Argentina,Buen Ayre,"50 Broadway Market, London",E8 4QJ,ChIJuTXOzOkcdkgR3wrWzQYTMF8,curated,Tiny Argentine parrilla since 2004. Charcoal-grilled steaks and Argentine wine list.
+AR,Argentina,La Patagonia,"31 Camden High Street, London",NW1 7JE,ChIJra4hIyAbdkgRL1Hm68uICC0,curated,"Family-run Argentine parrilla since 2010: charcoal-grilled beef, empanadas, sorrentinos. Evenings; weekends from noon."
+MX,Mexico,Fonda,"12 Heddon St, London",W1B 4BZ,ChIJz5cqMpsFdkgRhFTxy5uq87w,curated,"Santiago Lastra's regional Mexican, just off Regent Street. Opened October 2024."
+MX,Mexico,Mestizo,"103 Hampstead Rd, London",NW1 3EL,ChIJL4h3pScbdkgR-k0QZ7xnYy8,curated,Long-running regional Mexican with tequila and mezcal. Chelsea branch also.
+GE,Georgia,Ikhaltos Valley,"70 Stoke Newington High St, London",N16 7PA,ChIJ-_BtMloddkgRsH830J87OYg,curated,"Family-run Georgian in Stoke Newington: khinkali, khachapuri, wine. Opened early 2026."
+GE,Georgia,Qarva (Kensington),"23 Kensington Church St, London",W8 4LF,ChIJA94cixAPdkgRS70tR9F7iqs,curated,Georgian with qvevri amber wines. Kensington branch; sister in Pimlico. Closed Monday lunch.
+AM,Armenia,Jakobs,"20 Gloucester Rd, London",SW7 4RB,ChIJL2NLy14FdkgR8aAVCyq2DxM,flagged,"Long-running Armenian family cafe. The menu mixes Armenian, Persian and Middle Eastern dishes, so a looser fit."
+AZ,Azerbaijan,Land of Fire,"95 Caledonian Rd, London",N1 9BT,ChIJB0h73UcbdkgRnGcVVmXz5x4,curated,"Cosy Azerbaijani near King's Cross: piti, levengi, plov. Closed Mondays; weekday evenings only. Phone ahead."
+UZ,Uzbekistan,Uzbek Corner (Streatham),"2 Central Parade, Streatham High Rd, London",SW16 1HT,ChIJ2aYbjVUFdkgRkeP7FsawL90,curated,"Homemade Uzbek plov, manti, samsa and hand-pulled lagman. Moved from Queensway/Bayswater."
+UZ,Uzbekistan,OshPaz (Regent Street),"7 Regent Street St James's, London",SW1Y 4LR,ChIJ1UJ97-IFdkgRYfMS2HnzoN0,curated,"Chef Muzaffar Sadykov's Uzbek: plov, lagman, manti. Vegan options. Grab-and-go by day."
+UZ,Uzbekistan,Marokand,"431 Roman Rd, Bow, London",E3 5LX,ChIJLZTUIAYddkgRNLDUOIjPwNQ,curated,"Uzbek in Bow: plov, samsa, lagman and manti. HMC halal. Book via WhatsApp."
+MM,Myanmar,Lahpet (Covent Garden),"21 Slingsby Pl, London",WC2E 9AB,ChIJk7lTkwEFdkgRoBblIAt48gc,curated,"Burmese specialist in The Yards: tea leaf salad, mohinga."
+MM,Myanmar,Lahpet Larder (London Bridge),"39-45 Bermondsey St, London",SE1 3XF,ChIJTUfROQADdkgRwbJ1TS-LpeI,curated,Burmese restaurant and deli on Bermondsey Street near London Bridge. Closed Sundays.
+PH,Philippines,Kasa & Kin,"52-53 Poland St, London",W1F 7NQ,ChIJFXPozbkFdkgRDXyH1C-H_gM,curated,"Filipino all-day diner and bakery from Romulo Cafe team. Family-style plates, ube."
+PH,Philippines,Donia,"2.14 Top Floor, Kingly Court, Carnaby St, London",W1B 5PW,ChIJTUoBsQAFdkgRNfxmFv7zQIU,curated,Modern Filipino at Kingly Court. Closed Mondays; book ahead.
+PH,Philippines,Inihaw (Charlton),"3 The Village, Charlton, London",SE7 8UG,ChIJYX6VWw2p2EcRd2u86WxPL00,curated,Filipino grill (inihaw) in Charlton. Dine-in and takeaway. Closed Wednesdays.
+MY,Malaysia,Malay Fellas,"82 Queensway, Bayswater, London",W2 3RL,ChIJV4m-mNEbdkgRjyL4V36k7DI,curated,"Modern halal Malaysian in Bayswater. Nasi lemak, beef rendang wagyu and roti."
+MY,Malaysia,Padi@London,"62 Kensington High St, London",W8 4PE,ChIJcz2JtlcPdkgRljlSydMuVA0,flagged,"Halal Singaporean-Malay food (nasi ambeng, rendang, satay), opened April 2026. Not strictly Malaysian, so a curator call."
+LK,Sri Lanka,Hoppers (Soho),"49 Frith St, London",W1D 4SG,ChIJr0tb59IEdkgRv-YdFGtD1CA,curated,"Original Soho location. Sri Lankan hoppers, kothu and roasts. Some South Indian dosas."
+LK,Sri Lanka,The Coconut Island (Angel),"9 White Lion St, London",N1 9PD,ChIJLypnHAAbdkgRZ_SV0s90HNI,curated,"Sri Lankan street food: hoppers, kothu, devilled plates and arrack cocktails."
+NP,Nepal,Taste of Nepal (Blackfriars Rd),"Unit 2, 200 Blackfriars Rd, London",SE1 0XH,ChIJI1ccWDEFdkgRZFjl8x8N2mY,curated,"Casual Nepali counter: momos, thukpa, chowmein and curries."
+LA,Laos,Lao Café,"60 Chandos Place, London",WC2N 4HG,ChIJ6fyXI8wEdkgRhTjBNfU77j0,curated,"Lao menu from Rosa's Thai team. Char-grilled meats, herbs and curries. Listed as Thai, but Lao."
+KH,Cambodia,Heng Heng at The Red Cow,"59 Sheen Road, Richmond",TW9 1YJ,ChIJ4cTxqcENdkgRwJLIGT1sIao,flagged,"Cambodian and Thai kitchen inside the Red Cow pub, so a curator exception to the specialist rule."
+TW,Taiwan,BAO (Soho),"53 Lexington Street, London",W1F 9AS,ChIJxc4vk9QEdkgRjJ2al7_P9uw,curated,Original BAO (2015). Modern Taiwanese: gua bao and small plates. Walk-ins only.
+TW,Taiwan,Din Tai Fung (Centre Point),"Unit R04, 11 St Giles Square, London",WC2H 8AP,ChIJE3meifgbdkgRrICKCH8s9eU,curated,Taiwanese dumpling chain famous for xiao long bao. Book ahead.
+VN,Vietnam,Sông Quê Café,"134 Kingsland Rd, London",E2 8DY,ChIJybk4BLwcdkgRlNpyGIPk3n4,curated,Long-running Hoxton institution since 2002. Pho and banh mi on Kingsland Road Pho Mile.
+VN,Vietnam,Bếp House,"97 Kingsland Road, London",E2 8AG,ChIJdw7vF3QddkgRgY8kLi_ewPU,curated,"Vietnamese in Hoxton, formerly Ant House. Pho, banh mi, sizzling plates and street food."
+PL,Poland,Miód Malina,"315 Horn Ln, London",W3 0BU,ChIJj_ba6eMRdkgRCcGYEmMZWP0,curated,"Family-run Polish in Acton: pierogi, żurek, golabki. Closes early."
+PL,Poland,Ognisko,"55 Exhibition Road, South Kensington, London",SW7 2PG,ChIJP1Z1gkQFdkgRsyjCnpNoYsM,curated,"Polish classics in the Polish Hearth Club townhouse. Central and Eastern European menu, house vodkas."
+HU,Hungary,TrioBite,"625 High Road Leyton, London",E10 6RF,ChIJc-RIaEgddkgRI8oEQz-Z30w,flagged,Hungarian and Romanian menu near Leyton Midland Road: goulash and more. Shared cuisine; Lakehouse is the purer pick.
+HU,Hungary,Lakehouse Hungarian Restaurant,"83 High Road, South Woodford, London",E18 2QP,ChIJH2Cygu2n2EcRuf6E6M7UOQM,curated,Sibling-run Hungarian in South Woodford. Dine-in first and last weekend of month only.
+RO,Romania,Noroc,"149 Green Lanes, Palmers Green, London",N13 4SP,ChIJ1-9c-kQZdkgRDoWgMKUAQRk,curated,"Homely Romanian: sarmale, mamaliga, Moldavian tochitura on Green Lanes."
+RO,Romania,La Papy,"459 High Road Leyton, London",E10 5EL,ChIJTw7K46gddkgRT7Xa27B0LG4,flagged,Small Romanian-run in Leyton. Seafood-led menu with Romanian dishes like sarmale.
+UA,Ukraine,Tatar Bunar,"152 Curtain Road, Shoreditch, London",EC2A 3AT,ChIJfxYFtJQddkgRbSUI_OpCweg,curated,"Ukrainian in Shoreditch with open kitchen. Recipes from Tatarbunary, southern Ukraine. Book SevenRooms."
+UA,Ukraine,Ole Kyiv (Old Street),"145 City Road, London",EC1V 1AY,ChIJKyRpg3AddkgReK0URWxu9Ws,curated,"Independent Ukrainian bar and grill (former Alchemist). Borscht, chicken Kyiv, varenyky. Live music."
+PT,Portugal,Luso,"30 Charlotte Street, Fitzrovia, London",W1T 2NG,ChIJc7bMMVUbdkgRuiK_2aHFMrg,curated,Contemporary Portuguese in Fitzrovia. Closed Sundays; Monday dinner only.
+PT,Portugal,Casa do Frango (Southwark),"32 Southwark Street, London",SE1 1TU,ChIJfY7AT_UDdkgRF2ch8sfQVJg,curated,"Algarve piri-piri chicken on wood charcoal grill, hidden bar. By Borough Market."
+SE,Sweden,Ekstedt at The Yard,"Great Scotland Yard Hotel, 3-5 Great Scotland Yard, London",SW1A 2HN,ChIJL-HmB88EdkgRfH-wI_8ELLQ,flagged,"Niklas Ekstedt's open-fire cooking: Nordic technique, British produce, Swedish chef. Pricey, and not strictly Swedish."
+AF,Afghanistan,Marhaba Kabul,"301 North End Rd, London",W14 9NS,ChIJW5YvVq8PdkgRwHuuiE2aM1g,curated,Afghan charcoal grill: kabuli platter and feast platters. 100% halal. Some Mediterranean starters.
+AF,Afghanistan,Afghan Eats,"134 Brick Ln, London",E1 6RU,ChIJ8ZRBBqUddkgR59d1iwiSaRg,curated,"Afghan grill on Brick Lane. Chapli kebabs, lamb karahi. Dine-in, takeaway and delivery."
+YE,Yemen,Diwan Al Yemen,"228 Edgware Rd, London",W2 1DW,ChIJZx0XOT8bdkgRYDV-yOhgsag,community,Yemeni mandi and haneeth with floor seating on Edgware Road.
+YE,Yemen,Yemen Land,"69 Edgware Rd, London",W2 2HZ,ChIJs2BdIy8bdkgRWO3CIVKH55M,community,"Newer Yemeni: mandi, haneeth, zurbian, malawah. Table or floor seating. Halal."
+PS,Palestine,Akub,"27 Uxbridge St, London",W8 7TQ,ChIJATbscqsPdkgRCYAYH3uom80,curated,Modern Palestinian from chef Fadi Kattan. Opened December 2022.
+PS,Palestine,Taste of Palestine,"27 The Market, Wrythe Lane, Carshalton",SM5 1AG,ChIJOR4jMVEJdkgRBcBq_erWOqg,flagged,"Takeaway Palestinian. Sister site is mandi-focused, so menu may lean Yemeni."
+IQ,Iraq,Al Sulaymaniyah,"360 Edgware Rd, London",W2 1EB,ChIJgW7FLwAbdkgRE_AtF40Jlso,community,Iraqi and Kurdish grill: kebabs and big portions. Kurdish-leaning rather than purely Iraqi.
+IQ,Iraq,Samad Al Iraqi,"284-286 Kensington High St, London",W14 8NZ,ChIJaZH9XqoPdkgRZ5zU0EKcRNY,curated,Iraqi speciality: masgouf (grilled carp) needs pre-ordering. Also quzi and kubbah.
+GH,Ghana,Asafo,"60 Morrish Rd, Brixton Hill, London",SW2 4EG,ChIJ2deO3jsEdkgRXrENACPYeCo,flagged,"Long-running Ghanaian chop bar: jollof, waakye, banku, fufu with soups. Good food, slow service; a better pick is wanted."
+BR,Brazil,Fogo de Chão (Soho),"17 Wardour St, London",W1D 6PJ,ChIJSygJ478FdkgRWqGGRTqVUTg,flagged,Brazilian rodizio steakhouse chain (curator exception).
+ID,Indonesia,Bali Bali,"150 Shaftesbury Ave, London",WC2H 8HL,ChIJuzVKQs0EdkgRdmnylm7yjiw,flagged,"Family-owned Indonesian near Covent Garden for 30+ years: rendang, sate, nasi goreng. Menu leans Indonesian-Malaysian."
