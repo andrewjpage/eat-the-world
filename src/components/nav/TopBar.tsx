@@ -42,7 +42,7 @@ export function TopBar({ name, avatarUrl }: { name: string | null; avatarUrl?: s
             href="/settings"
             aria-label="Settings and profile"
             className={cn(
-              "rounded-full transition active:scale-95",
+              "inline-flex size-11 items-center justify-center rounded-full transition active:scale-95",
               pathname?.startsWith("/settings") && "ring-2 ring-stamp-red ring-offset-2 ring-offset-paper",
             )}
           >

@@ -49,13 +49,5 @@ export const getMyProfile = cache(async (): Promise<MyProfile | null> => {
   };
 });
 
-/** Turns a Postgres `raise exception` (or any error) into one friendly sentence. */
-export function friendlyError(error: { message?: string } | null | undefined, fallback: string): string {
-  const msg = error?.message?.trim();
-  if (!msg) return fallback;
-  // Our SQL functions raise short, user-facing sentences; anything technical gets the fallback.
-  if (/^(JWT|permission denied|new row violates|duplicate key|relation |column |function )/i.test(msg)) {
-    return fallback;
-  }
-  return msg;
-}
+/** Server-side error text reaches users only for our own `raise exception` (SQLSTATE P0001). */
+export { friendlyError } from "@/lib/errors";

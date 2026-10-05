@@ -78,17 +78,29 @@ function londonWallDate(now: Date): string {
 
 const whenFmt = new Intl.DateTimeFormat("en-GB", {
   timeZone: TIMEZONE,
-  weekday: "short",
+  year: "numeric",
+  month: "numeric",
   day: "numeric",
-  month: "short",
   hour: "2-digit",
   minute: "2-digit",
   hourCycle: "h23",
 });
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-/** "Sat 12 Oct, 19:30" in London time. */
+/**
+ * "Sat 12 Oct, 19:30" in London time. Built from numeric parts and fixed names, so the server
+ * (Node's ICU) and every browser give the same string and the plan card hydrates cleanly.
+ */
 export function formatWhen(ts: Date | string): string {
-  return whenFmt.format(typeof ts === "string" ? new Date(ts) : ts);
+  const p = Object.fromEntries(
+    whenFmt.formatToParts(typeof ts === "string" ? new Date(ts) : ts).map((x) => [x.type, x.value]),
+  );
+  const y = Number(p.year);
+  const m = Number(p.month);
+  const d = Number(p.day);
+  const weekday = WEEKDAYS[new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
+  return `${weekday} ${d} ${MONTHS[m - 1]}, ${p.hour}:${p.minute}`;
 }
 
 export interface PlanRsvpSummary {

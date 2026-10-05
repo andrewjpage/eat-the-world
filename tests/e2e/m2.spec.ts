@@ -6,6 +6,7 @@ import {
   createGroup,
   createUser,
   latestSignInLink,
+  makeCurator,
   markUncharted,
   restaurantId,
   signIn,
@@ -75,9 +76,10 @@ test("country and restaurant pages render", async ({ page }) => {
 test("bottom tabs and unknown pages never dead-end", async ({ page }) => {
   const u = await createUser("tabs");
   await signIn(page, u.email, "/map");
-  await expect(page.getByRole("heading", { name: "The map arrives soon" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Nearest unstamped" })).toBeVisible();
   await page.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "World" }).click();
-  await expect(page.getByRole("heading", { name: "The world map arrives soon" })).toBeVisible();
+  await expect(page).toHaveURL(/\/world$/);
+  await expect(page.getByRole("application", { name: /World map/ })).toBeVisible();
   await page.goto("/no-such-page");
   await expect(page.getByRole("heading", { name: "Off the map" })).toBeVisible();
 });
@@ -107,6 +109,9 @@ test("the emailed sign-in link keeps the invite", async ({ page }) => {
 
   // Tap the link in the email instead of typing the code.
   await page.goto(await latestSignInLink(email));
+  // Back on the invite: it shows the group and joins only on the button (a POST).
+  await expect(page.getByRole("heading", { name: "Join Email Supper?" })).toBeVisible();
+  await page.getByRole("button", { name: "Join the table" }).click();
   await expect(page).toHaveURL(/\/settings\/backfill\?onboarding=1/);
   const userId = await trackUserByEmail(email);
   const { count } = await admin()
@@ -121,7 +126,8 @@ test("invite flow: create group, join, backfill, passport", async ({ page, brows
   const a = await createUser("owner", "Owner A");
   const b = await createUser("joiner", "Joiner B");
 
-  // A creates a group in Settings.
+  // A creates a group in Settings. Groups are invite-only, so A is the curator (as Andrew is).
+  await makeCurator(a.id);
   await signIn(page, a.email, "/settings");
   await page.getByLabel("Group name").fill("E2E Supper");
   await page.getByRole("button", { name: "Create group" }).click();
@@ -139,6 +145,14 @@ test("invite flow: create group, join, backfill, passport", async ({ page, brows
   await pb.goto(joinPath);
   await expect(pb).toHaveURL(/\/login/);
   await signIn(pb, b.email, joinPath);
+  await expect(pb.getByRole("heading", { name: "Join E2E Supper?" })).toBeVisible();
+  // Opening the link (a GET) joins nobody: only the button does.
+  const { count: before } = await admin()
+    .from("group_members")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", b.id);
+  expect(before).toBe(0);
+  await pb.getByRole("button", { name: "Join the table" }).click();
   await expect(pb).toHaveURL(/\/settings\/backfill\?onboarding=1/);
 
   // Backfill two countries.

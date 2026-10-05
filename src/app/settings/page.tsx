@@ -9,6 +9,7 @@ import { Card, Eyebrow } from "@/components/ui/Card";
 import { Page, PageHeader } from "@/components/ui/Page";
 import { CreateGroupForm } from "@/app/group/CreateGroupForm";
 import { ProfileForm } from "./ProfileForm";
+import { DeleteAccount } from "@/components/settings/DeleteAccount";
 import { signOutAction } from "./actions";
 
 export const metadata: Metadata = { title: "Settings" };
@@ -92,7 +93,7 @@ export default async function SettingsPage() {
       </Card>
 
       <Eyebrow className="mb-2 px-1">Groups</Eyebrow>
-      <Card className="mb-3 overflow-hidden p-0">
+      <Card className={`${groups.length > 0 || profile.is_curator ? "mb-3" : "mb-5"} overflow-hidden p-0`}>
         {groups.length > 0 ? (
           <ul className="divide-y divide-line">
             {groups.map((g) => (
@@ -107,14 +108,19 @@ export default async function SettingsPage() {
           </ul>
         ) : (
           <p className="px-4 py-4 text-sm text-ink-soft">
-            No groups yet. Open a friend&apos;s invite link, or start your own below.
+            {profile.is_curator
+              ? "No groups yet. Start the first one below, then share its invite link."
+              : "No groups yet. Eat the World is invite-only: ask a friend for their group's invite link."}
           </p>
         )}
       </Card>
-      <Card tone="sunk" className="mb-5">
-        <p className="mb-3 font-display text-lg text-ink">Start a new group</p>
-        <CreateGroupForm />
-      </Card>
+      {/* Invite-only: a new group needs the curator or someone already in a group. */}
+      {(groups.length > 0 || profile.is_curator) && (
+        <Card tone="sunk" className="mb-5">
+          <p className="mb-3 font-display text-lg text-ink">Start a new group</p>
+          <CreateGroupForm />
+        </Card>
+      )}
 
       <Eyebrow className="mb-2 px-1">About</Eyebrow>
       <Card className="mb-6 overflow-hidden p-0">
@@ -124,7 +130,7 @@ export default async function SettingsPage() {
         </ul>
       </Card>
 
-      {/* M7: Delete account goes here (brief section 8). */}
+      <DeleteAccount />
 
       <form action={signOutAction}>
         <Button type="submit" variant="danger" block>

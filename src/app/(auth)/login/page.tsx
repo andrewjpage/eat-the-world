@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { APP_NAME, safeNext } from "@/lib/app";
+import { LegalLinks } from "@/components/legal/LegalLinks";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { LogoMark } from "@/components/nav/TopBar";
 
@@ -46,9 +46,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
 
       <p className="mt-auto pt-6 text-center text-xs text-muted">
         Invite-only, no ads, no tracking.{" "}
-        <Link href="/privacy" className="underline underline-offset-2">
-          Privacy
-        </Link>
+        <LegalLinks />
       </p>
     </div>
   );

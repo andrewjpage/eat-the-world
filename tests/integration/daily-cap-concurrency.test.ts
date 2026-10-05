@@ -94,7 +94,10 @@ async function asUserTx<T>(who: string, sql: string, params: unknown[]): Promise
 }
 
 async function createGroup(owner: string, members: string[]): Promise<string> {
+  // Groups are invite-only: only a curator or an existing member can start one.
+  await admin.query(`update public.profiles set is_curator = true where user_id = $1`, [owner]);
   const gid = await asUserTx<string>(owner, `select public.create_group($1) as r`, [`Conc ${tag}`]);
+  await admin.query(`update public.profiles set is_curator = false where user_id = $1`, [owner]);
   const [{ invite_code }] = await q<{ invite_code: string }>(
     admin,
     `select invite_code from public.groups where id = $1`,

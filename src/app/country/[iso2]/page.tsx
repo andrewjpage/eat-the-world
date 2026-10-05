@@ -19,6 +19,7 @@ import {
 } from "@/components/ui";
 import type { Verification } from "@/components/ui";
 import { formatDate, Stars } from "@/components/restaurant/format";
+import { SuggestRestaurant } from "@/components/country/SuggestRestaurant";
 
 /** One query per request, shared by generateMetadata and the page. */
 const loadCountry = cache(async (iso2: string) => {
@@ -175,8 +176,8 @@ export default async function CountryPage({ params }: PageProps<"/country/[iso2]
           <Card tone="sunk">
             <EmptyState emoji="🧭" title="No restaurants yet" className="py-4">
               {status === "uncharted"
-                ? "Our curator found no specialist in London. Spot one opening? Tell a curator."
-                : "Nobody's checked London for this one yet. Know a specialist? Tell a curator."}
+                ? "Our curator found no specialist in London. Spot one opening? Suggest it below."
+                : "No restaurants on the list yet. Suggest one below and the curator will check it."}
             </EmptyState>
           </Card>
         ) : (
@@ -215,6 +216,10 @@ export default async function CountryPage({ params }: PageProps<"/country/[iso2]
           </ul>
         )}
       </section>
+
+      <div className="mb-6">
+        <SuggestRestaurant iso2={iso2} countryName={displayName(country)} />
+      </div>
 
       <section aria-labelledby="eaten-h" className="mb-6">
         <h2 id="eaten-h" className="mb-3 font-display text-xl text-ink">

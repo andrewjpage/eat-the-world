@@ -15,8 +15,8 @@ import {
  *
  * The body ({ restaurantId, groupId, tagged, location: { lat, lon, accuracy } | null,
  * clientKey, ... }) goes straight to rpc('check_in') as the signed-in user. The database
- * computes the distance with PostGIS and keeps only distance_m (rounded to 10 m) and
- * geo_verified. A retry with the same clientKey returns the first result and creates
+ * computes the distance with PostGIS and keeps only the verification, plus distance_m
+ * (rounded to 10 m) when the check-in is geo_verified; members can't read distance_m. A retry with the same clientKey returns the first result and creates
  * nothing. Nothing here logs the body, puts it in a URL or echoes it in an error.
  */
 const NO_STORE = { "Cache-Control": "no-store" } as const;

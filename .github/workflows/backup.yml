@@ -1,0 +1,45 @@
+name: Backup
+
+# Supabase Free has no automatic backups: keep a weekly dump as a workflow artifact.
+on:
+  schedule:
+    - cron: "41 2 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dump:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+    steps:
+      - name: Check the secret
+        id: gate
+        run: |
+          if [ -z "$SUPABASE_DB_URL" ]; then
+            echo "SUPABASE_DB_URL is not set; skipping."
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: supabase/setup-cli@1dedf2c611547ede7232d26866dd3c56ab903bbb # v1.7.3
+        if: steps.gate.outputs.run == 'true'
+        with:
+          version: 2.119.0 # match package.json devDependencies
+      - name: Dump schema and data
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          supabase db dump --db-url "$SUPABASE_DB_URL" -f backup.sql
+          supabase db dump --db-url "$SUPABASE_DB_URL" --data-only -f backup-data.sql
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: steps.gate.outputs.run == 'true'
+        with:
+          name: supabase-backup-${{ github.run_id }}
+          path: |
+            backup.sql
+            backup-data.sql
+          retention-days: 90
+          if-no-files-found: error

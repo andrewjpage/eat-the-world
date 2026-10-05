@@ -243,10 +243,16 @@ declare
   v_group uuid;
   v_code text;
   v_member uuid;
+  v_was_curator boolean;
 begin
+  -- Groups are invite-only: a new group needs a curator or an existing member. Lend the owner the
+  -- curator flag for the one call, then put it back.
+  select p.is_curator into v_was_curator from public.profiles p where p.user_id = p_owner;
+  update public.profiles set is_curator = true where user_id = p_owner;
   perform tests.authenticate_as(p_owner);
   v_group := public.create_group(p_name);
   perform tests.clear_authentication();
+  update public.profiles set is_curator = coalesce(v_was_curator, false) where user_id = p_owner;
   select invite_code into v_code from public.groups where id = v_group;
   foreach v_member in array coalesce(p_members, '{}'::uuid[]) loop
     perform tests.authenticate_as(v_member);

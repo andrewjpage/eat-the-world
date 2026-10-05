@@ -68,7 +68,7 @@ export function Leaderboard({
               ? label
                 ? `Season: ${label} (London dates, inclusive).`
                 : "No season dates set, so this counts everything."
-              : "Every stamp and set the group has ever earned."}
+              : "Every visit stamp and set the group has ever earned. Before-the-app stamps don't score."}
           </p>
           {verifiedOnly && (
             <p className="mt-1.5" data-testid="verified-only-note">

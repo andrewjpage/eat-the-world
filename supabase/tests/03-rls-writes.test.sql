@@ -199,9 +199,9 @@ select throws_ok(format('insert into public.reactions (visit_id, user_id, emoji)
 
 -- ---------------------------------------------------------------- submissions, closure reports, storage
 select lives_ok(format(
-  'insert into public.submissions (city_id, country_iso2, name, address, postcode, lat, lon, note, submitted_by, status)
-   values (%L, ''MN'', ''Bob Suggests'', ''2 Bob St'', ''BOB 2AA'', 51.51, -0.11, ''great buuz'', %L, ''pending'')', :'city', :'bob'),
-  'a member can insert a submission');
+  'insert into public.submissions (city_id, country_iso2, name, address, postcode, note, submitted_by, status)
+   values (%L, ''MN'', ''Bob Suggests'', ''2 Bob St'', ''BOB 2AA'', ''great buuz'', %L, ''pending'')', :'city', :'bob'),
+  'a member can insert a submission (no coordinates: the curator geocodes on approval)');
 select lives_ok(format('insert into public.closure_reports (restaurant_id, reported_by, note) values (%L, %L, ''shut'')', :'r_np', :'bob'),
   'a member can insert a closure report');
 select throws_ok(format('insert into storage.objects (bucket_id, name, owner) values (''visit-photos'', %L, %L)',
@@ -209,8 +209,8 @@ select throws_ok(format('insert into storage.objects (bucket_id, name, owner) va
   '42501', null, 'no client insert into the visit-photos bucket');
 reset role;
 -- If the member insert above failed, create the submission as postgres so the review tests still run.
-insert into public.submissions (city_id, country_iso2, name, address, postcode, lat, lon, note, submitted_by, status)
-select :'city', 'MN', 'Bob Suggests', '2 Bob St', 'BOB 2AA', 51.51, -0.11, 'great buuz', :'bob', 'pending'
+insert into public.submissions (city_id, country_iso2, name, address, postcode, note, submitted_by, status)
+select :'city', 'MN', 'Bob Suggests', '2 Bob St', 'BOB 2AA', 'great buuz', :'bob', 'pending'
 where not exists (select 1 from public.submissions where name = 'Bob Suggests');
 select id as sub_id from public.submissions where name = 'Bob Suggests' \gset
 

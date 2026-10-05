@@ -4,6 +4,29 @@ import { mapsUrl } from "@/lib/maps-url";
 import { haversineMetres, nearest } from "@/lib/geo";
 import { displayName, flagEmoji, groupByRegion } from "@/lib/countries";
 import { londonDate } from "@/lib/time";
+import { friendlyError } from "@/lib/errors";
+
+describe("friendlyError", () => {
+  const fallback = "Please try again.";
+  it("shows only our own raise exception (SQLSTATE P0001)", () => {
+    expect(friendlyError({ code: "P0001", message: " Ask a friend for an invite link first. " }, fallback)).toBe(
+      "Ask a friend for an invite link first.",
+    );
+  });
+  it("hides constraint, cast and permission errors, and echoed input", () => {
+    for (const e of [
+      { code: "23514", message: 'new row for relation "closure_reports" violates check constraint "closure_reports_note_check"' },
+      { code: "22P02", message: 'invalid input syntax for type uuid: "not-a-uuid"' },
+      { code: "42501", message: "permission denied for table visits" },
+      { message: "TypeError: fetch failed" },
+      { code: "P0001", message: "  " },
+      null,
+      undefined,
+    ]) {
+      expect(friendlyError(e, fallback)).toBe(fallback);
+    }
+  });
+});
 
 describe("londonDate", () => {
   it("handles BST and GMT", () => {

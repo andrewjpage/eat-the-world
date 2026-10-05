@@ -30,7 +30,7 @@ export function PassportHeader({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <Eyebrow>Passport</Eyebrow>
-          <p className="truncate font-display text-xl text-ink">{name}</p>
+          <h1 className="truncate font-display text-xl text-ink">{name}</h1>
         </div>
         <div className="shrink-0 text-right">
           <p className="font-display text-3xl leading-none text-stamp-red">{points}</p>

@@ -23,6 +23,9 @@ export type ProcessResult =
   | { ok: true; jpeg: Buffer; width: number; height: number; engine: "sharp" | "passthrough" }
   | { ok: false; status: number; error: string };
 
+/** Upper bound on decoded pixels: about 200 MB of RGBA at most on a small serverless function. */
+export const PHOTO_MAX_INPUT_PIXELS = 50_000_000;
+
 export const UNSUPPORTED = "We can only take JPEG, PNG or WebP photos. HEIC isn't supported yet.";
 const UNREADABLE = "We couldn't read that photo. Try another one.";
 const NEEDS_STRIP = "That photo still carries location or camera details, so it wasn't stored.";
@@ -150,8 +153,9 @@ export function loadSharp(): Promise<SharpModule | null> {
 async function reencode(sharp: SharpModule, input: Uint8Array) {
   const { data, info } = await sharp(input, {
     failOn: "error",
-    // 48 MP phone photos are fine; a decompression bomb is not.
-    limitInputPixels: 120_000_000,
+    // 48 MP phone photos (48.8 MP) are fine, and the browser already resizes to 1600 px;
+    // a decompression bomb (a tiny file that expands to hundreds of MB) is not.
+    limitInputPixels: PHOTO_MAX_INPUT_PIXELS,
   })
     .rotate() // apply the EXIF orientation to the pixels, then the tag is gone
     .resize({ width: PHOTO_MAX_EDGE, height: PHOTO_MAX_EDGE, fit: "inside", withoutEnlargement: true })

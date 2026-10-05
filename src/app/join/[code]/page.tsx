@@ -1,18 +1,16 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { friendlyError, requireUser } from "@/components/auth/session";
+import { requireUser } from "@/components/auth/session";
 import { ButtonLink } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Page } from "@/components/ui/Page";
+import { INVITE_CODE_RE, normaliseInviteCode } from "./code";
+import { JoinButton } from "./JoinButton";
 
 export const metadata: Metadata = { title: "Join a group" };
 
-const CODE_RE = /^[A-Z0-9]{8}$/;
-
-function joinedWithin(joinedAt: string, ms: number): boolean {
-  return Date.now() - new Date(joinedAt).getTime() < ms;
-}
+const GROUP_MAX_MEMBERS = 20;
 
 function JoinProblem({ title, children, emoji }: { title: string; children: string; emoji: string }) {
   return (
@@ -38,22 +36,17 @@ function JoinProblem({ title, children, emoji }: { title: string; children: stri
 }
 
 /**
- * Invite link: /join/ABCD1234. Signed out → /login and back here (the proxy and
- * requireUser both do this). Signed in → join_group, then first-timers go to
- * backfill onboarding and everyone else to the group.
+ * Invite link: /join/ABCD1234. Signed out → /login and back here (the proxy and requireUser
+ * both do this). Signed in, this page only reads: it shows the group and a "Join the table"
+ * button, and the join itself is a server action (POST), so following a link can't join anyone.
+ * Members of the group go straight to it.
  */
 export default async function JoinPage({ params }: PageProps<"/join/[code]">) {
   const { code: raw } = await params;
-  let decoded = raw;
-  try {
-    decoded = decodeURIComponent(raw);
-  } catch {
-    // Malformed escape: validated (and rejected) below.
-  }
-  const code = decoded.replace(/\s/g, "").toUpperCase();
-  const user = await requireUser(`/join/${encodeURIComponent(raw)}`);
+  const code = normaliseInviteCode(raw);
+  await requireUser(`/join/${encodeURIComponent(raw)}`);
 
-  if (!CODE_RE.test(code)) {
+  if (!INVITE_CODE_RE.test(code)) {
     return (
       <JoinProblem emoji="🔍" title="That invite looks smudged">
         Invite codes are 8 letters and numbers. Ask whoever sent it for a fresh link.
@@ -62,47 +55,46 @@ export default async function JoinPage({ params }: PageProps<"/join/[code]">) {
   }
 
   const supabase = await createClient();
-  const [{ data: memberships }, stamps] = await Promise.all([
-    supabase.from("group_members").select("group_id, joined_at").eq("user_id", user.id),
-    supabase
-      .from("stamps")
-      .select("country_iso2", { count: "exact", head: true })
-      .eq("user_id", user.id),
+  // RLS returns the group only to its members.
+  const [{ data: mine }, { data: preview }] = await Promise.all([
+    supabase.from("groups").select("id").eq("invite_code", code).maybeSingle(),
+    supabase.rpc("invite_preview", { p_invite_code: code }),
   ]);
+  if (mine) redirect(`/group/${mine.id}`);
 
-  const { data: groupId, error } = await supabase.rpc("join_group", { p_invite_code: code });
-
-  if (error || !groupId) {
-    const message = friendlyError(error, "We couldn't join that group. Please try again.");
-    if (/full/i.test(message)) {
-      return (
-        <JoinProblem emoji="🍽️" title="This table is full">
-          {`${message} Ask the owner to make room, or start your own group.`}
-        </JoinProblem>
-      );
-    }
-    if (/doesn.t match/i.test(message)) {
-      return (
-        <JoinProblem emoji="🔍" title="That invite has expired">
-          The group owner may have changed the link. Ask them to send the new one.
-        </JoinProblem>
-      );
-    }
+  const group = (preview as { name: string; members: number }[] | null)?.[0];
+  if (!group) {
     return (
-      <JoinProblem emoji="😬" title="Couldn't join">
-        {message}
+      <JoinProblem emoji="🔍" title="That invite has expired">
+        The group owner may have changed the link. Ask them to send the new one.
+      </JoinProblem>
+    );
+  }
+  if (group.members >= GROUP_MAX_MEMBERS) {
+    return (
+      <JoinProblem emoji="🍽️" title="This table is full">
+        {`${GROUP_MAX_MEMBERS} members is the limit. Ask the owner to make room.`}
       </JoinProblem>
     );
   }
 
-  // First time: no stamps and no other group, and not a long-standing member of
-  // this one. The 10-minute grace keeps it stable if this page renders twice.
-  const previous = (memberships ?? []).find((m) => m.group_id === groupId);
-  const recentlyJoined = !previous || joinedWithin(previous.joined_at as string, 10 * 60_000);
-  const firstTime =
-    (stamps.count ?? 0) === 0 &&
-    (memberships ?? []).every((m) => m.group_id === groupId) &&
-    recentlyJoined;
-
-  redirect(firstTime ? "/settings/backfill?onboarding=1" : `/group/${groupId}`);
+  const others = group.members === 1 ? "1 friend is" : `${group.members} friends are`;
+  return (
+    <Page>
+      <EmptyState
+        emoji="🍽️"
+        title={`Join ${group.name}?`}
+        action={
+          <div className="space-y-3">
+            <JoinButton code={code} />
+            <ButtonLink href="/" variant="ghost" block>
+              Not now
+            </ButtonLink>
+          </div>
+        }
+      >
+        {`${others} already at the table. Join to eat your way round the world together: one check-in stamps everyone who came.`}
+      </EmptyState>
+    </Page>
+  );
 }

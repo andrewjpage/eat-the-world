@@ -1,0 +1,91 @@
+/* London map: pin artwork and Leaflet chrome in the design tokens (docs/design.md). */
+
+.leaflet-container {
+  font-family: var(--font-sans);
+  background: var(--paper-sunk);
+  outline: none;
+}
+
+.etw-pin {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: none;
+  border: 0;
+}
+.etw-pin-svg {
+  display: block;
+  overflow: visible;
+  filter: drop-shadow(0 2px 2px rgb(var(--shadow-ink) / 0.35));
+  transition: transform 140ms ease-out;
+  transform-origin: 50% 100%;
+}
+.etw-pin-sel .etw-pin-svg {
+  transform: scale(1.3);
+}
+.etw-pin-new .etw-head {
+  fill: var(--stamp-red);
+  stroke: var(--paper-raised);
+  stroke-width: 1.6;
+}
+.etw-pin-new .etw-dot {
+  fill: var(--on-stamp-red);
+}
+.etw-pin-stamped .etw-head {
+  fill: var(--muted);
+  fill-opacity: 0.55;
+  stroke: var(--paper-raised);
+  stroke-width: 1.4;
+}
+.etw-pin-stamped .etw-dot {
+  fill: var(--paper-raised);
+  fill-opacity: 0.8;
+}
+.etw-ring-halo {
+  fill: none;
+  stroke: var(--paper-raised);
+  stroke-width: 5;
+}
+.etw-ring {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2.4;
+}
+
+/* The OSM tiles are light; ease them in dark mode so the red pins stay the loudest thing. */
+@media (prefers-color-scheme: dark) {
+  .etw-tiles {
+    filter: brightness(0.78) contrast(1.05) saturate(0.85);
+  }
+}
+
+.leaflet-control-attribution {
+  background: color-mix(in oklab, var(--paper-raised) 88%, transparent) !important;
+  color: var(--ink-soft);
+}
+.leaflet-control-attribution a {
+  color: var(--ink);
+}
+.leaflet-bar a {
+  background-color: var(--paper-raised);
+  color: var(--ink);
+  border-bottom-color: var(--line);
+}
+.leaflet-bar a:hover {
+  background-color: var(--paper-sunk);
+}
+.leaflet-touch .leaflet-bar a {
+  width: 40px;
+  height: 40px;
+  line-height: 40px;
+}
+.leaflet-tooltip {
+  background: var(--paper-raised);
+  color: var(--ink);
+  border-color: var(--line);
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgb(var(--shadow-ink) / 0.2);
+}
+.leaflet-tooltip-top::before {
+  border-top-color: var(--paper-raised);
+}

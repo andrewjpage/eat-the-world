@@ -108,6 +108,22 @@ export default async function GroupPage({ params }: PageProps<"/group/[id]">) {
   const isOwner = group.owner_id === user.id;
   const origin = await requestOrigin();
   const inviteUrl = `${origin}/join/${group.invite_code}`;
+  // A one-person group has one useful thing to do: invite. Put that first.
+  const solo = members.length === 1;
+  const flagCount = isOwner ? data.flagged.length : 0;
+  const invite = (
+    <section id="invite" aria-label="Invite friends">
+      <InviteCard
+        groupId={group.id}
+        groupName={group.name}
+        inviteUrl={inviteUrl}
+        inviteCode={group.invite_code}
+        isOwner={isOwner}
+        memberCount={members.length}
+        maxMembers={GROUP_MAX_MEMBERS}
+      />
+    </section>
+  );
   const settings = {
     name: group.name,
     verifiedOnly: group.verified_only,
@@ -123,9 +139,16 @@ export default async function GroupPage({ params }: PageProps<"/group/[id]">) {
           {members.length} {members.length === 1 ? "member" : "members"}
           {isOwner && " · you run this group"}
         </p>
+        {flagCount > 0 && (
+          <a href="#owner-tools" className="mt-2 inline-flex min-h-11 items-center">
+            <Badge tone="gold">🤨 {flagCount} to look at</Badge>
+          </a>
+        )}
       </PageHeader>
 
       <div className="space-y-5">
+        {solo && invite}
+
         {/* 2. Together */}
         <Together stamped={data.together.stamped} listed={data.together.listed} />
 
@@ -154,18 +177,8 @@ export default async function GroupPage({ params }: PageProps<"/group/[id]">) {
         {/* 6. Activity feed */}
         <ActivityFeed items={data.feed} checkInHref="/check-in" />
 
-        {/* 7. Invite friends */}
-        <section id="invite" aria-label="Invite friends">
-          <InviteCard
-            groupId={group.id}
-            groupName={group.name}
-            inviteUrl={inviteUrl}
-            inviteCode={group.invite_code}
-            isOwner={isOwner}
-            memberCount={members.length}
-            maxMembers={GROUP_MAX_MEMBERS}
-          />
-        </section>
+        {/* 7. Invite friends (at the top instead while the owner is on their own) */}
+        {!solo && invite}
 
         {/* 7. Members */}
         <section id="members" aria-labelledby="members-heading">

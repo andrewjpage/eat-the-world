@@ -160,7 +160,7 @@ select is(
         'remove_backfilled_stamp', 'set_visit_photo', 'downgrade_visit', 'dismiss_flag',
         'group_leaderboard', 'group_together', 'group_gaps', 'delete_my_account',
         'approve_submission', 'reject_submission',
-        'visit_reaction_counts', 'group_flagged_visits')),
+        'visit_reaction_counts', 'group_flagged_visits', 'invite_preview')),
   '{}'::text[],
   'guard: authenticated executes only the API functions (no internal helpers or triggers)');
 

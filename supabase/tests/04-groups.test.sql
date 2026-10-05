@@ -11,9 +11,12 @@ select tests.create_user('late@test.local') as late \gset
 select tests.create_user('extra@test.local') as extra \gset
 
 -- ---------------------------------------------------------------- create_group
+-- Groups are invite-only (20-launch-review covers the gate): the owner is the curator here.
+update public.profiles set is_curator = true where user_id = :'owner';
 select tests.authenticate_as(:'owner');
 select public.create_group('Supper club') as g \gset
 reset role;
+update public.profiles set is_curator = false where user_id = :'owner';
 select is((select owner_id from public.groups where id = :'g'), :'owner'::uuid, 'create_group makes the caller owner_id');
 select is((select role::text from public.group_members where group_id = :'g' and user_id = :'owner'), 'owner', 'creator is a member with role owner');
 select is((select length(invite_code) from public.groups where id = :'g'), 8, 'invite_code has 8 characters');

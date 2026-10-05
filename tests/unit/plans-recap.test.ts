@@ -39,6 +39,14 @@ describe("londonToInstant", () => {
   it("round-trips through formatWhen", () => {
     expect(formatWhen(londonToInstant("2026-07-04", "19:30")!)).toContain("19:30");
   });
+  it("formats the same way under any ICU (no comma after the weekday, no 'Sept')", () => {
+    expect(formatWhen(londonToInstant("2026-10-10", "19:30")!)).toBe("Sat 10 Oct, 19:30");
+    expect(formatWhen(londonToInstant("2026-09-05", "08:05")!)).toBe("Sat 5 Sep, 08:05");
+    // Winter: London is on UTC.
+    expect(formatWhen("2026-12-31T23:30:00Z")).toBe("Thu 31 Dec, 23:30");
+    // Summer time: 23:30 UTC is 00:30 the next day in London.
+    expect(formatWhen("2026-07-04T23:30:00Z")).toBe("Sun 5 Jul, 00:30");
+  });
 });
 
 describe("plans", () => {

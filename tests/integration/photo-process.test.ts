@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import sharp from "sharp";
 import {
+  PHOTO_MAX_INPUT_PIXELS,
   jpegCarriesMetadata,
   processPhoto,
   sniffPhotoKind,
@@ -49,6 +50,18 @@ describe("processPhoto", () => {
   it("does not enlarge a small photo", async () => {
     const out = await processPhoto(await flat(300, 200).jpeg().toBuffer());
     expect(out).toMatchObject({ ok: true, width: 300, height: 200 });
+  });
+
+  it("refuses a decompression bomb (8000x8000 blank PNG) but takes a 48 MP photo", async () => {
+    const bomb = await flat(8000, 8000).png({ compressionLevel: 9 }).toBuffer();
+    expect(bomb.length).toBeLessThan(5 * 1024 * 1024); // small enough to pass the upload limit
+    const out = await processPhoto(bomb);
+    expect(out.ok).toBe(false);
+    if (!out.ok) expect(out.status).toBe(422);
+
+    const phone = await processPhoto(await flat(8064, 6048).jpeg({ quality: 50 }).toBuffer());
+    expect(phone.ok).toBe(true);
+    expect(8064 * 6048).toBeLessThan(PHOTO_MAX_INPUT_PIXELS);
   });
 
   it("refuses HEIC and garbage", async () => {

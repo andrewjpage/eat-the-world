@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { friendlyError, getSessionUser } from "@/components/auth/session";
+import { UUID_RE } from "@/components/restaurant/format";
 
 export interface ActionState {
   ok?: boolean;
@@ -34,6 +35,9 @@ export async function createGroupAction(_prev: ActionState, formData: FormData):
 export async function rotateInviteCodeAction(groupId: string): Promise<ActionState> {
   const user = await getSessionUser();
   if (!user) return { error: "Please sign in first." };
+  if (typeof groupId !== "string" || !UUID_RE.test(groupId)) {
+    return { error: "We couldn't change the link. Please try again." };
+  }
 
   const supabase = await createClient();
   const { error } = await supabase.rpc("rotate_invite_code", { p_group_id: groupId });

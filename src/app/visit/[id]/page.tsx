@@ -11,6 +11,7 @@ import { formatDate, Stars } from "@/components/restaurant/format";
 import { AddPhoto } from "@/components/photos/AddPhoto";
 import { VisitPhoto } from "@/components/photos/VisitPhoto";
 import { PointsBreakdown } from "@/components/stamp/PointsBreakdown";
+import { ShareRecapButton } from "@/components/recap/ShareRecapButton";
 import {
   Avatar,
   Badge,
@@ -233,6 +234,21 @@ export default async function VisitPage({ params }: PageProps<"/visit/[id]">) {
             Already stamped — logged as a repeat visit, 0 points.
           </p>
         </Card>
+      )}
+      {/* Share again once friends have confirmed: the PNG is drawn live, so it shows the final table. */}
+      {iConfirmed && (
+        <ShareRecapButton
+          className="mb-5"
+          visitId={id}
+          restaurantName={restaurant.name}
+          countryName={countryName}
+          names={otherNames}
+          totalPoints={
+            stampFromHere
+              ? stampFromHere.base + stampFromHere.rarity_bonus + stampFromHere.table_bonus + stampFromHere.dish_bonus
+              : 0
+          }
+        />
       )}
 
       {anyPending && (

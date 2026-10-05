@@ -1,27 +1,18 @@
 import type { Metadata } from "next";
 import { requireUser } from "@/components/auth/session";
-import { ButtonLink } from "@/components/ui/Button";
-import { EmptyState } from "@/components/ui/EmptyState";
-import { Page } from "@/components/ui/Page";
+import { loadWorldData } from "@/components/world/data";
+import { WorldView } from "@/components/world/WorldView";
 
 export const metadata: Metadata = { title: "World" };
 
-/** Placeholder until M5 ships the world map. */
+/** Choropleth of my visit stamps or my group's combined stamps. The map loads on this screen only. */
 export default async function WorldPage() {
-  await requireUser("/world");
+  const user = await requireUser("/world");
+  const data = await loadWorldData(user.id);
   return (
-    <Page>
-      <EmptyState
-        emoji="🌍"
-        title="The world map arrives soon"
-        action={
-          <ButtonLink href="/" block>
-            Back to my passport
-          </ButtonLink>
-        }
-      >
-        Your stamps, coloured in across the globe. Until then, your passport has them all.
-      </EmptyState>
-    </Page>
+    <>
+      <h1 className="sr-only">World view</h1>
+      <WorldView data={data} />
+    </>
   );
 }

@@ -1,11 +1,12 @@
 /**
  * DEV ONLY: print a one-click sign-in URL for a local user.
  *
- *   npm run dev:login -- alice@example.com [--port 3101] [--next /group]
+ *   npm run dev:login -- alice@example.com [--port 3101 | 3101] [--next /group]
  *
  * Creates the user (email confirmed) through the admin API if missing, then
  * uses auth.admin.generateLink to mint a magic-link token and prints
- * http://127.0.0.1:<port>/auth/confirm?token_hash=...&type=magiclink&next=/
+ * http://localhost:<port>/auth/confirm?token_hash=...&type=magiclink&next=/ (localhost, not
+ * 127.0.0.1: the session cookie lands on the host you browse, and Next 16 allows HMR there).
  * Refuses to run unless NEXT_PUBLIC_SUPABASE_URL points at localhost.
  */
 import { existsSync } from "node:fs";
@@ -35,15 +36,14 @@ async function main() {
   }
 
   const flagValues = new Set(["--port", "--next"].map((f) => arg(f.slice(2))));
-  const email = process.argv
-    .slice(2)
-    .find((a) => !a.startsWith("--") && !flagValues.has(a))
-    ?.trim()
-    .toLowerCase();
+  const positional = process.argv.slice(2).filter((a) => !a.startsWith("--") && !flagValues.has(a));
+  const email = positional.find((a) => a.includes("@"))?.trim().toLowerCase();
+  // A bare number after the email is the port too (npm run dev:login -- me@x.local 3101).
+  const positionalPort = positional.find((a) => /^\d{2,5}$/.test(a));
   if (!email || !email.includes("@")) {
     fail("usage: npm run dev:login -- <email> [--port 3000] [--next /path]");
   }
-  const port = arg("port") ?? process.env.PORT ?? "3000";
+  const port = arg("port") ?? positionalPort ?? process.env.PORT ?? "3000";
   if (!/^\d{2,5}$/.test(port)) fail(`bad port ${port}`);
   const next = arg("next") ?? "/";
   if (!next.startsWith("/") || next.startsWith("//")) fail("--next must be a relative path");
@@ -64,7 +64,7 @@ async function main() {
     fail(`generateLink failed: ${error?.message ?? "no token returned"}`);
   }
 
-  const link = new URL(`http://127.0.0.1:${port}/auth/confirm`);
+  const link = new URL(`http://localhost:${port}/auth/confirm`);
   link.searchParams.set("token_hash", data.properties.hashed_token);
   link.searchParams.set("type", "magiclink");
   link.searchParams.set("next", next);

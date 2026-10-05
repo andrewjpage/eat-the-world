@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { requireUser } from "@/components/auth/session";
+import { getMyProfile, requireUser } from "@/components/auth/session";
 import { Card, Eyebrow } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Page, PageHeader } from "@/components/ui/Page";
@@ -27,15 +27,20 @@ export default async function GroupsPage() {
   const groups = (data ?? []) as unknown as GroupRow[];
 
   if (groups.length === 0) {
+    // Invite-only: only the curator can start the first group; everyone else joins by invite.
+    const curator = (await getMyProfile())?.is_curator === true;
     return (
       <Page>
         <EmptyState emoji="🍽️" title="No table yet">
-          Groups are where the fun happens: dinners together, one check-in stamps the whole table.
-          Open a friend&apos;s invite link, or start a group and invite them.
+          {curator
+            ? "Groups are where the fun happens: dinners together, one check-in stamps the whole table. Start the first one and invite your friends."
+            : "Groups are where the fun happens: dinners together, one check-in stamps the whole table. Eat the World is invite-only, so ask a friend for their group's invite link."}
         </EmptyState>
-        <Card>
-          <CreateGroupForm cta="Start a group" />
-        </Card>
+        {curator && (
+          <Card>
+            <CreateGroupForm cta="Start a group" />
+          </Card>
+        )}
       </Page>
     );
   }

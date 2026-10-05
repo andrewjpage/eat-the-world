@@ -464,7 +464,7 @@ export function CheckInFlow({
           <div>
             <p className="text-[0.95rem] text-ink-soft">
               One tap and we check you&apos;re at {restaurant.name}. We measure the distance once and
-              keep only a rounded figure, never where you are.
+              keep only whether you&apos;re here, never where you are.
             </p>
             {(loc === "denied" || loc === "failed") && (
               <p role="status" className="mt-4 rounded-2xl bg-paper-sunk px-4 py-3 text-[0.95rem] text-ink">

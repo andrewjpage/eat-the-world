@@ -56,7 +56,8 @@ Tables as in brief section 5, with these exact names and the following additions
 - `reactions` and `submissions` have `created_at`. `submissions` stores the proposed `city_id`, `country_iso2`, `name`, `address`, `postcode`, `lat`, `lon`, `google_place_id`, `website` and `note`.
 - Every id is a uuid with `default gen_random_uuid()`, except `countries.iso2`.
 - `visits.client_key uuid` (nullable, unique per `created_by`): the idempotency key from `check_in`.
-- Members insert submissions directly (RLS: `submitted_by = auth.uid()`, `status = 'pending'`, caller in a group or curator); reviewer fields are curator-only.
+- `visits.distance_m` is kept only for a `geo_verified` check-in (so always within ~750 m of a public restaurant point). Members read every `visits` column except `distance_m` and `client_key` (column grants, `20261005170000_launch_review.sql`), so select named columns, never `*`.
+- Members insert submissions directly (RLS: `submitted_by = auth.uid()`, `status = 'pending'`, caller in a group or curator); reviewer fields are curator-only. They can't insert `lat`/`lon`: the curator geocodes the postcode with postcodes.io on approval. Checks: `website` is `http(s)://` and at most 300 characters, `postcode` at most 10, `address` at most 300, `google_place_id` matches `^[A-Za-z0-9_-]{10,200}$`; a trigger refuses an 11th pending submission per user.
 - `reactions`: each user selects, inserts and deletes only their own rows, on visits they can read (`20261005160000_reactions_privacy.sql`). Brief section 4 ("a 🤨 shows as a count, never with names") narrows section 5's "members read reactions": the feed gets everyone's reactions as counts from `visit_reaction_counts`, and the owner's flag list from `group_flagged_visits`.
 
 ### Views (`security_invoker = true`)
@@ -71,11 +72,12 @@ Tables as in brief section 5, with these exact names and the following additions
 | `max_new_stamps_per_day()` | int | 3 |
 | `app_now()` | timestamptz | `now()`, unless `session_user = 'postgres'` and the GUC `app.now` is set (tests only; API callers can't set it). Every function uses it instead of `now()` |
 | `london_date(p_ts timestamptz)` | date | `(p_ts at time zone 'Europe/London')::date` |
-| `create_group(p_name text)` | uuid | Caller becomes owner; generates an 8-character `invite_code` |
-| `join_group(p_invite_code text)` | uuid | Idempotent; enforces 20 members |
+| `create_group(p_name text)` | uuid | Caller becomes owner; generates an 8-character `invite_code`. Invite-only: the caller must be the curator or already in a group |
+| `join_group(p_invite_code text)` | uuid | Idempotent; enforces 20 members. Called only from the `/join` server action (POST), never on a page GET |
+| `invite_preview(p_invite_code text)` | table(name text, members int) | Signed-in callers. The group name and member count behind a code (case and spaces ignored); no row for an unknown code. Does not join |
 | `update_group_settings(p_group_id uuid, p_name text, p_verified_only bool, p_season_start date, p_season_end date)` | void | Owner only |
 | `rotate_invite_code(p_group_id uuid)` | text | Owner only |
-| `check_in(p_restaurant_id uuid, p_group_id uuid, p_lat float8, p_lon float8, p_accuracy float8, p_tagged uuid[], p_signature_dish_id uuid, p_dish_other text, p_rating smallint, p_note text, p_client_key uuid)` | jsonb `StampResult` | Location args may be null. Stores only `distance_m`. Tagged users must be members of the group. Inserts the creator's confirmed row and pending rows for tagged users. `p_client_key` (optional) is a random uuid per check-in: a retry with the same key creates nothing and returns the first call's result |
+| `check_in(p_restaurant_id uuid, p_group_id uuid, p_lat float8, p_lon float8, p_accuracy float8, p_tagged uuid[], p_signature_dish_id uuid, p_dish_other text, p_rating smallint, p_note text, p_client_key uuid)` | jsonb `StampResult` | Location args may be null. Stores no coordinates, and `distance_m` only when the check-in is `geo_verified`. Tagged users must be members of the group. Inserts the creator's confirmed row and pending rows for tagged users. `p_client_key` (optional) is a random uuid per check-in: a retry with the same key creates nothing and returns the first call's result |
 | `confirm_attendance(p_visit_id uuid, p_signature_dish_id uuid, p_dish_other text, p_rating smallint, p_note text)` | jsonb `StampResult` | Caller's pending row; refused after 7 days. On an already confirmed row it reports the stamp that confirmation made (a safe retry) |
 | `decline_attendance(p_visit_id uuid)` | void | |
 | `claim_stamp(p_visit_id uuid)` | jsonb `StampResult` | Caller's waiting attendance. On an already claimed row it reports the stamp the claim made |
@@ -90,7 +92,7 @@ Tables as in brief section 5, with these exact names and the following additions
 | `group_together(p_group_id uuid, p_city_id uuid)` | table(stamped int, listed int) | Visit stamps of any member ∩ listed |
 | `group_gaps(p_group_id uuid, p_city_id uuid)` | table(country_iso2 text) | Listed countries no member has a visit stamp for |
 | `delete_my_account()` | text[] | Applies brief section 8, deletes the `auth.users` row, and returns the photo paths for the caller to remove from Storage |
-| `approve_submission(p_submission_id uuid, p_lat float8, p_lon float8)` | uuid | Curator only. Inserts an `active` restaurant |
+| `approve_submission(p_submission_id uuid, p_lat float8, p_lon float8)` | uuid | Curator only. Inserts an `active` restaurant. The curator action always passes coordinates geocoded from the postcode |
 | `reject_submission(p_submission_id uuid, p_note text)` | void | Curator only |
 
 `StampResult` is jsonb with these fields:
@@ -142,7 +144,7 @@ After any confirmation:
 ## Routes
 
 - **Pages:**
-  - `/` (Passport), `/login`, `/join/[code]`
+  - `/` (Passport), `/login`, `/join/[code]` (read-only: shows `invite_preview` and a "Join the table" button whose server action calls `join_group`)
   - `/country/[iso2]`, `/restaurant/[id]`, `/check-in/[restaurantId]`, `/visit/[id]` (confirm, claim, nudge)
   - `/group/[id]` (Together, leaderboard, feed, Gaps, Spin, plans, flags), `/group/[id]/plan` (all upcoming plans), `/group/[id]/plan/new` (`?restaurant=`, `?date=`; from Spin the date defaults to next Friday)
   - `/map`, `/world`
@@ -165,6 +167,8 @@ After any confirmation:
 - `SUPABASE_SERVICE_ROLE_KEY` (server only; never imported in client code)
 - `CRON_SECRET`
 - `NEXT_PUBLIC_APP_URL`
+
+Every response carries `X-Robots-Tag: noindex, nofollow`, `X-Frame-Options: DENY`, `frame-ancestors 'none'`, `nosniff`, `Referrer-Policy: strict-origin-when-cross-origin` and a Permissions-Policy (`next.config.ts`); `/robots.txt` disallows everything. Server-side error text reaches the UI only for SQLSTATE `P0001` (our `raise exception`) via `friendlyError`.
 
 ## First deploy checks
 

@@ -87,7 +87,7 @@ export function BackfillPicker({
     setBusy((s) => flip(s, false));
     if (error) {
       setPicked((s) => flip(s, !adding));
-      toast(error.message || `Couldn't update ${c.name}. Try again.`, "error");
+      toast((error.code === "P0001" && error.message) || `Couldn't update ${c.name}. Try again.`, "error");
     }
   }
 

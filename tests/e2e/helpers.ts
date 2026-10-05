@@ -92,6 +92,12 @@ export async function createGroup(ownerId: string, name: string) {
   return { id: data.id as string, inviteCode: data.invite_code as string };
 }
 
+/** Groups are invite-only: only a curator or an existing member can start one in the UI. */
+export async function makeCurator(userId: string) {
+  const { error } = await admin().from("profiles").update({ is_curator: true }).eq("user_id", userId);
+  if (error) throw new Error(`makeCurator: ${error.message}`);
+}
+
 /** Mark a throwaway address (one that createUser didn't make) for deletion in cleanup. */
 export async function trackUserByEmail(email: string) {
   const { data } = await admin().auth.admin.listUsers({ perPage: 1000 });
@@ -102,7 +108,7 @@ export async function trackUserByEmail(email: string) {
 
 /**
  * The latest sign-in email sent to `to`, from the local Supabase mail catcher
- * (MAILPIT_URL). Returns the "tap here to sign in" link.
+ * (MAILPIT_URL). Returns the path and query of the "tap here to sign in" link.
  */
 export async function latestSignInLink(to: string): Promise<string> {
   const base = process.env.MAILPIT_URL ?? "http://127.0.0.1:54324";
@@ -116,7 +122,10 @@ export async function latestSignInLink(to: string): Promise<string> {
       const msg = (await (await fetch(`${base}/api/v1/message/${id}`)).json()) as { HTML: string };
       const href = msg.HTML.match(/href="([^"]*\/auth\/confirm\?[^"]*)"/)?.[1];
       if (!href) throw new Error("no sign-in link in the email");
-      return href.replace(/&amp;/g, "&");
+      // Path and query only: the email uses the Auth site URL (port 3000), and the app under
+      // test may run on another port, so page.goto resolves it against baseURL.
+      const u = new URL(href.replace(/&amp;/g, "&"));
+      return `${u.pathname}${u.search}`;
     }
     await new Promise((r) => setTimeout(r, 250));
   }
