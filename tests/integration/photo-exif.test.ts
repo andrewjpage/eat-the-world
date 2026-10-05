@@ -8,7 +8,7 @@ import { exiftool } from "exiftool-vendored";
 import { handlePhotoUpload, PHOTO_BUCKET } from "@/app/api/visits/[id]/photo/handle";
 import { jpegCarriesMetadata } from "@/app/api/visits/[id]/photo/process";
 import { serverRealtimeOptions } from "@/lib/supabase/node-realtime";
-import { isLocalUrl } from "../helpers/local-db";
+import { isLocalUrl, testCountryRows } from "../helpers/local-db";
 import { FIXTURE_GPS, makeGpsJpeg, makeHeicLike } from "../fixtures/photos";
 
 // Runs only against the local Supabase stack (.env.local pointing at localhost).
@@ -31,6 +31,7 @@ describe.skipIf(!local)("photo route: EXIF and GPS never reach storage", () => {
   const stored: string[] = [];
   let groupId: string;
   let restaurantId: string;
+  let cityId = "";
   let alice: SupabaseClient;
   let bob: SupabaseClient;
   let outsider: SupabaseClient;
@@ -109,8 +110,33 @@ describe.skipIf(!local)("photo route: EXIF and GPS never reach storage", () => {
       { group_id: groupId, user_id: a.id, role: "owner" },
       { group_id: groupId, user_id: b.id, role: "member" },
     ]);
-    const { data: r } = await admin.from("restaurants").select("id").eq("status", "active").limit(1).single();
-    restaurantId = r!.id;
+    // Its own city and restaurant, so the test passes on an unseeded database (CI runs it
+    // before the seed).
+    const slug = `photo-${crypto.randomUUID().slice(0, 8)}`;
+    const { data: city, error: cityErr } = await admin.from("cities").insert({ name: slug, slug }).select("id").single();
+    if (cityErr || !city) throw new Error(`city: ${cityErr?.message}`);
+    cityId = city.id;
+    const { error: countryErr } = await admin
+      .from("countries")
+      .upsert(testCountryRows(["LA"]), { onConflict: "iso2", ignoreDuplicates: true });
+    if (countryErr) throw new Error(`country: ${countryErr.message}`);
+    const { data: r, error: rErr } = await admin
+      .from("restaurants")
+      .insert({
+        city_id: cityId,
+        country_iso2: "LA",
+        name: `Photo ${slug}`,
+        address: "1 Test Street",
+        postcode: "WC2N 4HG",
+        lat: 51.5098,
+        lon: -0.1243,
+        status: "active",
+        confidence: "curated",
+      })
+      .select("id")
+      .single();
+    if (rErr || !r) throw new Error(`restaurant: ${rErr?.message}`);
+    restaurantId = r.id;
   });
 
   afterAll(async () => {
@@ -118,6 +144,11 @@ describe.skipIf(!local)("photo route: EXIF and GPS never reach storage", () => {
       if (stored.length) await admin.storage.from(PHOTO_BUCKET).remove(stored);
       if (groupId) await admin.from("groups").delete().eq("id", groupId);
       for (const id of userIds) await admin.auth.admin.deleteUser(id);
+      if (cityId) {
+        await admin.from("restaurants").delete().eq("city_id", cityId);
+        await admin.from("city_countries").delete().eq("city_id", cityId);
+        await admin.from("cities").delete().eq("id", cityId);
+      }
       if (tmp) await rm(tmp, { recursive: true, force: true });
     } finally {
       await exiftool.end();

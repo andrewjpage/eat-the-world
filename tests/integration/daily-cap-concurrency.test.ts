@@ -2,7 +2,7 @@ import { existsSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { Client } from "pg";
-import { isLocalUrl } from "../helpers/local-db";
+import { isLocalUrl, testCountryRows } from "../helpers/local-db";
 
 // Concurrency proofs for confirm_attendance and check_in (brief sections 2, 4 and 5). Runs only
 // against the local stack (SUPABASE_DB_URL on localhost, e.g. from .env.local) and skips
@@ -59,6 +59,13 @@ async function createCity(): Promise<string> {
     [slug],
   );
   cityIds.push(id);
+  for (const c of testCountryRows(COUNTRIES)) {
+    await admin.query(
+      `insert into public.countries (iso2, iso_numeric, name, iso_name) values ($1, $2, $3, $4)
+       on conflict do nothing`,
+      [c.iso2, c.iso_numeric, c.name, c.iso_name],
+    );
+  }
   for (const iso of COUNTRIES) {
     await admin.query(
       `insert into public.city_countries (city_id, country_iso2, status) values ($1, $2, 'unlisted')`,

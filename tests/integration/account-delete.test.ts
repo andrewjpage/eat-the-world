@@ -4,7 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { handleAccountDelete, PHOTO_BUCKET } from "@/app/api/account/handle";
 import { serverRealtimeOptions } from "@/lib/supabase/node-realtime";
-import { isLocalUrl } from "../helpers/local-db";
+import { isLocalUrl, testCountryRows } from "../helpers/local-db";
 
 // Brief section 3's worked example, then Alice deletes her account (brief section 8): Bob and
 // Cara keep 32, and the visit's photo object is gone. Runs only against the local stack:
@@ -87,6 +87,9 @@ describe.skipIf(!local)("worked example, then Alice deletes her account", () => 
       admin.from("cities").insert({ name: `Del ${tag}`, slug: `del-${tag}` }).select("id").single(),
     );
     cityId = city.id;
+    await ok(
+      admin.from("countries").upsert(testCountryRows([COUNTRY]), { onConflict: "iso2", ignoreDuplicates: true }),
+    );
     await ok(
       admin.from("city_countries").insert({ city_id: cityId, country_iso2: COUNTRY, status: "unlisted" }),
     );
