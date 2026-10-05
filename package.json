@@ -12,7 +12,7 @@
     "test:e2e": "playwright test",
     "seed": "tsx scripts/seed.ts",
     "env:local": "bash scripts/env-local.sh",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "db:reset": "supabase db reset"
   },
   "dependencies": {

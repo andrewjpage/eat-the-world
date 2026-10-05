@@ -18,13 +18,16 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
-      - run: npm test
       - uses: supabase/setup-cli@v1
         with:
           version: latest
       - run: supabase start
       - run: npm run test:db
       - run: npm run env:local
+      # Vitest after .env.local so the SQL/TS constants test runs instead of skipping.
+      - run: npm test
+      - run: npm run seed
+      # Second run must insert nothing and fail on nothing (insert-only seed).
       - run: npm run seed
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e

@@ -30,7 +30,7 @@ Extensions: `postgis` in schema `extensions`, and `pgtap` for tests only. Every 
 
 ### Enums
 
-`city_country_status(unlisted, uncharted)`, `restaurant_status(active, reported_closed, closed, pending)`, `confidence(curated, community, flagged)`, `dish_status(draft, approved)`, `member_role(owner, member)`, `verification(geo_verified, photo, self_reported)`, `attendance_status(pending, confirmed, declined)`, `reaction_emoji(clap, drool, side_eye)`, `submission_status(pending, approved, rejected)`, `plan_status(proposed, booked, done, cancelled)`, `rsvp_response(yes, no, maybe)`.
+`city_country_stored_status(unlisted, uncharted)` (the column type of `city_countries.status`; the view below owns the name `city_country_status`), `restaurant_status(active, reported_closed, closed, pending)`, `confidence(curated, community, flagged)`, `dish_status(draft, approved)`, `member_role(owner, member)`, `verification(geo_verified, photo, self_reported)`, `attendance_status(pending, confirmed, declined)`, `reaction_emoji(clap, drool, side_eye)`, `submission_status(pending, approved, rejected)`, `plan_status(proposed, booked, done, cancelled)`, `rsvp_response(yes, no, maybe)`.
 
 ### Tables
 
@@ -47,6 +47,7 @@ Tables as in brief section 5, with these exact names and the following additions
   - `city_countries (city_id, country_iso2)`
 - `reactions` and `submissions` have `created_at`. `submissions` stores the proposed `city_id`, `country_iso2`, `name`, `address`, `postcode`, `lat`, `lon`, `google_place_id`, `website` and `note`.
 - Every id is a uuid with `default gen_random_uuid()`, except `countries.iso2`.
+- Members insert submissions directly (RLS: `submitted_by = auth.uid()`, `status = 'pending'`, caller in a group or curator); reviewer fields are curator-only.
 
 ### Views (`security_invoker = true`)
 
@@ -58,6 +59,8 @@ Tables as in brief section 5, with these exact names and the following additions
 | Function | Returns | Notes |
 |---|---|---|
 | `max_new_stamps_per_day()` | int | 3 |
+| `app_now()` | timestamptz | `now()`, unless `session_user = 'postgres'` and the GUC `app.now` is set (tests only; API callers can't set it). Every function uses it instead of `now()` |
+| `london_date(p_ts timestamptz)` | date | `(p_ts at time zone 'Europe/London')::date` |
 | `create_group(p_name text)` | uuid | Caller becomes owner; generates an 8-character `invite_code` |
 | `join_group(p_invite_code text)` | uuid | Idempotent; enforces 20 members |
 | `update_group_settings(p_group_id uuid, p_name text, p_verified_only bool, p_season_start date, p_season_end date)` | void | Owner only |
