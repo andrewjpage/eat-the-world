@@ -76,6 +76,8 @@ select is((select array_agg(country_iso2::text order by country_iso2) from publi
 reset role;
 
 -- ---------------------------------------------------------------- verified_only
+insert into storage.objects (bucket_id, name)
+values ('visit-photos', :'g' || '/' || ((:'ann_mn'::jsonb) ->> 'visit_id') || '.jpg');
 select tests.authenticate_as(:'ann');
 select public.set_visit_photo(((:'ann_mn'::jsonb) ->> 'visit_id')::uuid, :'g' || '/' || ((:'ann_mn'::jsonb) ->> 'visit_id') || '.jpg');
 select public.update_group_settings(:'g', 'Board group', true, '2026-07-01', '2026-07-31');

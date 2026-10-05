@@ -71,6 +71,7 @@ select tests.confirm(:'v_p') as p_cara \gset
 reset role;
 select is(tests.visit_of(:'v_p') ->> 'verification', 'self_reported', 'before the photo: self_reported');
 
+insert into storage.objects (bucket_id, name) values ('visit-photos', :'g' || '/' || :'v_p' || '.jpg');
 select tests.authenticate_as(:'vic');
 select public.set_visit_photo(:'v_p', :'g' || '/' || :'v_p' || '.jpg');
 reset role;
@@ -91,6 +92,7 @@ select ((:'q'::jsonb) ->> 'visit_id') as v_q \gset
 select tests.authenticate_as(:'bob');
 select tests.confirm(:'v_q') as q_bob \gset
 reset role;
+insert into storage.objects (bucket_id, name) values ('visit-photos', :'g' || '/' || :'v_q' || '.jpg');
 select tests.authenticate_as(:'vic');
 select public.set_visit_photo(:'v_q', :'g' || '/' || :'v_q' || '.jpg');
 reset role;
@@ -136,6 +138,7 @@ select is((select array_agg(verification::text order by user_id) from public.sta
   array['self_reported', 'self_reported', 'self_reported'], 'owner downgrade reaches every stamp from the visit');
 
 -- A later photo cannot raise a downgraded visit.
+insert into storage.objects (bucket_id, name) values ('visit-photos', :'g' || '/' || :'v_d' || '.jpg');
 select tests.authenticate_as(:'vic');
 select tests.try_exec(format('select public.set_visit_photo(%L, %L)', :'v_d', :'g' || '/' || :'v_d' || '.jpg')) as ignored \gset
 reset role;

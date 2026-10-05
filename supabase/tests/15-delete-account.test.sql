@@ -51,6 +51,10 @@ select tests.authenticate_as(:'cara');
 select tests.confirm(:'v1') as v1_cara \gset
 reset role;
 
+insert into storage.objects (bucket_id, name) values
+  ('visit-photos', :'g' || '/' || :'v1' || '.jpg'),
+  ('visit-photos', :'g' || '/' || :'v2' || '.jpg'),
+  ('visit-photos', :'g' || '/' || :'v4' || '.jpg');
 select tests.authenticate_as(:'alice');
 select public.set_visit_photo(:'v1', :'g' || '/' || :'v1' || '.jpg');
 select public.set_visit_photo(:'v2', :'g' || '/' || :'v2' || '.jpg');

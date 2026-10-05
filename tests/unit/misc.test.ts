@@ -102,4 +102,13 @@ describe("countries", () => {
     expect(g.map((x) => x.group)).toEqual(["Y", "Z"]);
     expect(g[1].countries.map((c) => c.name)).toEqual(["A", "B"]);
   });
+  it("orders known regions west to east, before unknown ones", () => {
+    const g = groupByRegion([
+      { name: "Antarctica", m49_group: "Antarctica" },
+      { name: "Japan", m49_group: "Eastern Asia" },
+      { name: "Spain", m49_group: "Southern Europe" },
+      { name: "Canada", m49_group: "Northern America" },
+    ]);
+    expect(g.map((x) => x.group)).toEqual(["Northern America", "Southern Europe", "Eastern Asia", "Antarctica"]);
+  });
 });

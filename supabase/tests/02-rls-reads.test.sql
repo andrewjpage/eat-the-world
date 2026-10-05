@@ -40,6 +40,7 @@ values (:'alice', :'set_id', :'city', '2026-07-15 12:00:00+01', 25)
 on conflict do nothing;
 insert into storage.objects (bucket_id, name, owner)
 values ('visit-photos', :'g1' || '/' || :'v1' || '.jpg', :'alice');
+update public.visits set photo_path = :'g1' || '/' || :'v1' || '.jpg' where id = :'v1';
 
 -- ---------------------------------------------------------------- a non-member who shares no group
 select tests.authenticate_as(:'xena');

@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Your Eat the World sign-in code</title>
+  </head>
+  <body style="margin:0;padding:0;background:#f6efe1;color:#1f2a44;font-family:Georgia,'Times New Roman',serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6efe1;padding:32px 16px;">
+      <tr>
+        <td align="center">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:440px;background:#fffaf0;border:2px dashed #c8102e;border-radius:16px;padding:28px 24px;">
+            <tr>
+              <td style="text-align:center;">
+                <p style="margin:0 0 4px;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:#c8102e;font-family:Arial,Helvetica,sans-serif;font-weight:bold;">Eat the World</p>
+                <h1 style="margin:0 0 16px;font-size:24px;line-height:1.25;font-weight:normal;">Your passport is waiting</h1>
+                <p style="margin:0 0 20px;font-size:15px;line-height:1.5;font-family:Arial,Helvetica,sans-serif;color:#4a5068;">Type this code into the app to sign in.</p>
+                <p style="margin:0 0 8px;font-size:12px;letter-spacing:2px;text-transform:uppercase;font-family:Arial,Helvetica,sans-serif;color:#4a5068;">Your code</p>
+                <p style="margin:0 0 24px;font-size:36px;letter-spacing:10px;font-weight:bold;font-family:'Courier New',Courier,monospace;color:#1f2a44;">{{ .Token }}</p>
+                <p style="margin:0 0 24px;">
+                  <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&amp;type=email&amp;next={{ .RedirectTo }}" style="display:inline-block;background:#c8102e;color:#fffaf0;text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-weight:bold;font-size:15px;padding:12px 22px;border-radius:999px;">Or tap here to sign in</a>
+                </p>
+                <p style="margin:0;font-size:12px;line-height:1.5;font-family:Arial,Helvetica,sans-serif;color:#5f6477;">The code works once and expires in an hour. If you didn't ask for it, ignore this email.</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

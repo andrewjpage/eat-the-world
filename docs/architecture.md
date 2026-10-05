@@ -18,6 +18,8 @@ The brief (`eat-the-world-london-brief.md`) is the spec. This file fixes the nam
 
 Next.js 16 differs from older versions. Read the relevant guide in `node_modules/next/dist/docs/` before writing Next code. For example, session refresh lives in `proxy.ts`, not `middleware.ts`, if the docs say so.
 
+A dev server started with `NEXT_DIST_DIR=.next-<name>` adds `.next-<name>/...` lines to `tsconfig.json` `include`. Remove them before committing; ESLint already ignores `.next-*/`.
+
 ## Constants
 
 - `MAX_NEW_STAMPS_PER_DAY = 3`: in TypeScript `src/lib/scoring.ts`, and in SQL `public.max_new_stamps_per_day()`. A test checks that they match.
@@ -27,6 +29,12 @@ Next.js 16 differs from older versions. Read the relevant guide in `node_modules
 ## Database
 
 Extensions: `postgis` in schema `extensions`, and `pgtap` for tests only. Every SECURITY DEFINER function sets `search_path = ''` and schema-qualifies names.
+
+### Grants for new objects
+
+New tables, sequences and functions get no grants by default (migration `20261005130000_security_review.sql`). Add explicit `grant ... to authenticated` for each new table or API function, `revoke execute ... from public, anon, authenticated` on internal and trigger functions (Postgres grants PUBLIC execute on every new function), and add every new API function to the allowlist in `supabase/tests/16-security-review.test.sql`.
+
+Related rules from the same review: `set_visit_photo` refuses unless the `visit-photos` object already exists (upload with the service role first); photo reads require a visit whose `photo_path` equals the object name; `profiles.avatar_url` only accepts Google profile photos or Supabase Storage URLs (`20261005140000_avatar_url_hosts.sql`).
 
 ### Enums
 
