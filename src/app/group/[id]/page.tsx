@@ -1,9 +1,19 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { GROUP_MAX_MEMBERS } from "@/lib/scoring";
 import { requireUser } from "@/components/auth/session";
+import { ActivityFeed } from "@/components/group/ActivityFeed";
+import { FlagList } from "@/components/group/FlagList";
+import { GapGrid } from "@/components/group/GapGrid";
+import { GroupSettings } from "@/components/group/GroupSettings";
+import { Leaderboard } from "@/components/group/Leaderboard";
+import { SpinGlobe } from "@/components/group/SpinGlobe";
+import { Together } from "@/components/group/Together";
+import { loadGroupPage } from "@/components/group/data";
+import { PlanList } from "@/components/plans/PlanList";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { Card, Eyebrow } from "@/components/ui/Card";
@@ -43,20 +53,29 @@ async function requestOrigin(): Promise<string> {
   return "http://127.0.0.1:3000";
 }
 
+function PlansFallback() {
+  return (
+    <section aria-label="Dinner plans" aria-busy="true">
+      <Eyebrow className="mb-2 px-1">Dinner plans</Eyebrow>
+      <Card tone="sunk" className="h-24 animate-pulse motion-reduce:animate-none">
+        <span className="sr-only">Loading plans…</span>
+      </Card>
+    </section>
+  );
+}
+
 const joinedFmt = new Intl.DateTimeFormat("en-GB", { month: "short", year: "numeric", timeZone: "Europe/London" });
 
 /**
- * The group page. Sections, top to bottom (brief section 6.7):
- *   1. Header: name and members           (M2, here)
- *   2. Together bar                         (M4)
- *   3. Leaderboard (season / all-time)      (M4)
- *   4. Plans: Spin the globe, Plan a dinner (M4)
- *   5. Activity feed with reactions         (M4)
- *   6. Gaps                                 (M4)
- *   7. Owner's flag list                    (M4)
- *   8. Invite friends                       (M2, here)
- *   9. Members                              (M2, here)
- * Later milestones add their section components in the marked slots.
+ * The group page. Sections, top to bottom (brief section 6.7), built for the fun core loop:
+ *   1. Header: name and members
+ *   2. Together bar
+ *   3. Spin the globe + Gaps
+ *   4. Dinner plans (PlanList, owned by the plans agent)
+ *   5. Leaderboard (season / all-time)
+ *   6. Activity feed with reactions
+ *   7. Invite friends, Members
+ *   8. Owner tools: settings and the private flag list (owner only)
  */
 export default async function GroupPage({ params }: PageProps<"/group/[id]">) {
   const { id } = await params;
@@ -64,13 +83,23 @@ export default async function GroupPage({ params }: PageProps<"/group/[id]">) {
   if (!UUID_RE.test(id)) notFound();
 
   const supabase = await createClient();
-  const [{ data: group }, { data: memberRows }] = await Promise.all([
-    supabase.from("groups").select("id, name, owner_id, invite_code").eq("id", id).maybeSingle(),
+  const groupP = supabase
+    .from("groups")
+    .select("id, name, owner_id, invite_code, verified_only, season_start, season_end")
+    .eq("id", id)
+    .maybeSingle();
+  // The page data starts in the same round trip; only the owner's flag list waits for the group.
+  const [{ data: group }, { data: memberRows }, data] = await Promise.all([
+    groupP,
     supabase
       .from("group_members")
       .select("user_id, role, joined_at, profiles(display_name, avatar_url)")
       .eq("group_id", id)
       .order("joined_at"),
+    loadGroupPage(
+      id,
+      groupP.then(({ data: g }) => !!g && g.owner_id === user.id),
+    ),
   ]);
   // RLS hides groups you aren't in, so "not a member" and "doesn't exist" look the same.
   if (!group) notFound();
@@ -79,6 +108,12 @@ export default async function GroupPage({ params }: PageProps<"/group/[id]">) {
   const isOwner = group.owner_id === user.id;
   const origin = await requestOrigin();
   const inviteUrl = `${origin}/join/${group.invite_code}`;
+  const settings = {
+    name: group.name,
+    verifiedOnly: group.verified_only,
+    seasonStart: group.season_start,
+    seasonEnd: group.season_end,
+  };
 
   return (
     <Page>
@@ -91,20 +126,35 @@ export default async function GroupPage({ params }: PageProps<"/group/[id]">) {
       </PageHeader>
 
       <div className="space-y-5">
-        {/* 2–7. M4 slots: <TogetherBar />, <Leaderboard />, <Plans />, <Feed />, <Gaps />, <FlagList /> */}
-        <section aria-labelledby="table-heading">
-          <Card tone="sunk" className="text-center">
-            <p id="table-heading" className="font-display text-lg text-ink">
-              The table is set
-            </p>
-            <p className="mt-1 text-sm text-ink-soft">
-              Your Together bar, leaderboard and dinner plans appear here once the group starts
-              checking in.
-            </p>
-          </Card>
-        </section>
+        {/* 2. Together */}
+        <Together stamped={data.together.stamped} listed={data.together.listed} />
 
-        {/* 8. Invite friends */}
+        {/* 3. Spin the globe and Gaps */}
+        <SpinGlobe groupId={group.id} gaps={data.gaps} />
+        <GapGrid gaps={data.gaps} />
+
+        {/* 4. Plans */}
+        {/* Streams in after the rest, so Together and Spin paint first. */}
+        <Suspense fallback={<PlansFallback />}>
+          <PlanList groupId={group.id} userId={user.id} isOwner={isOwner} origin={origin} />
+        </Suspense>
+
+        {/* 5. Leaderboard */}
+        <Leaderboard
+          key={`${group.season_start}|${group.season_end}`}
+          season={data.leaderboards.season}
+          allTime={data.leaderboards.allTime}
+          seasonStart={group.season_start}
+          seasonEnd={group.season_end}
+          verifiedOnly={group.verified_only}
+          meId={user.id}
+          action={isOwner ? <GroupSettings groupId={group.id} initial={settings} label="Season & rules" /> : undefined}
+        />
+
+        {/* 6. Activity feed */}
+        <ActivityFeed items={data.feed} checkInHref="/check-in" />
+
+        {/* 7. Invite friends */}
         <section id="invite" aria-label="Invite friends">
           <InviteCard
             groupId={group.id}
@@ -117,7 +167,7 @@ export default async function GroupPage({ params }: PageProps<"/group/[id]">) {
           />
         </section>
 
-        {/* 9. Members */}
+        {/* 7. Members */}
         <section id="members" aria-labelledby="members-heading">
           <Eyebrow id="members-heading" className="mb-2 px-1">
             Members · {members.length}/{GROUP_MAX_MEMBERS}
@@ -143,6 +193,17 @@ export default async function GroupPage({ params }: PageProps<"/group/[id]">) {
             </ul>
           </Card>
         </section>
+
+        {/* 8. Owner tools (private) */}
+        {isOwner && (
+          <section id="owner-tools" aria-labelledby="owner-heading" className="space-y-4">
+            <Eyebrow id="owner-heading" className="px-1">
+              Owner tools
+            </Eyebrow>
+            <GroupSettings groupId={group.id} initial={settings} label="Group settings" variant="button" />
+            <FlagList groupId={group.id} items={data.flagged} />
+          </section>
+        )}
       </div>
     </Page>
   );

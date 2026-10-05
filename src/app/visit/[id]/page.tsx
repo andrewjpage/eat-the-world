@@ -8,6 +8,8 @@ import { NudgeButton } from "@/components/checkin/NudgeButton";
 import { VisitActions, type VisitMode } from "@/components/checkin/VisitActions";
 import { UUID_RE, confirmWindowOpen, dailyCapFull } from "@/components/checkin/logic";
 import { formatDate, Stars } from "@/components/restaurant/format";
+import { AddPhoto } from "@/components/photos/AddPhoto";
+import { VisitPhoto } from "@/components/photos/VisitPhoto";
 import { PointsBreakdown } from "@/components/stamp/PointsBreakdown";
 import {
   Avatar,
@@ -66,7 +68,7 @@ export default async function VisitPage({ params }: PageProps<"/visit/[id]">) {
   const { data: visit } = await supabase
     .from("visits")
     .select(
-      "id, visited_at, verification, group_id, groups(name), restaurants(id, name, country_iso2, countries(iso2, name, iso_name))",
+      "id, visited_at, verification, group_id, created_by, photo_path, groups(name), restaurants(id, name, country_iso2, countries(iso2, name, iso_name))",
     )
     .eq("id", id)
     .maybeSingle();
@@ -116,6 +118,10 @@ export default async function VisitPage({ params }: PageProps<"/visit/[id]">) {
     (a) => a.user_id !== user.id && a.status === "pending" && open,
   ).length;
   const anyPending = attendees.some((a) => a.status === "pending") && open;
+  // The other people at the table, for the recap's share text.
+  const otherNames = attendees
+    .filter((a) => a.user_id !== user.id && (a.status === "confirmed" || (a.status === "pending" && open)))
+    .map((a) => a.profiles?.display_name ?? "Former member");
 
   const stamp = myStamp as StampRow | null;
   // A waiting row for a country stamped since at another visit would only claim a repeat
@@ -175,6 +181,7 @@ export default async function VisitPage({ params }: PageProps<"/visit/[id]">) {
         restaurantName={restaurant.name}
         pendingOthers={pendingOthers}
         visitedAt={visit.visited_at}
+        otherNames={otherNames}
       />
 
       {me?.status === "pending" && !open && (
@@ -232,6 +239,12 @@ export default async function VisitPage({ params }: PageProps<"/visit/[id]">) {
         <div className="mb-5">
           <NudgeButton visitId={id} restaurantName={restaurant.name} />
         </div>
+      )}
+
+      {visit.photo_path ? (
+        <VisitPhoto path={visit.photo_path} alt={`Photo from ${restaurant.name}`} className="mb-5" />
+      ) : (
+        visit.created_by === user.id && <AddPhoto visitId={id} className="mb-5" />
       )}
 
       <section aria-labelledby="who-h">

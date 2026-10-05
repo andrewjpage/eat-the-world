@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, type ReactNode } from "react";
 import { NudgeButton } from "@/components/checkin/NudgeButton";
-import { outcomeCopy, type StampResult } from "@/components/checkin/logic";
+import { PREDICTED_VISIT_ID, outcomeCopy, type StampResult } from "@/components/checkin/logic";
 import { Badge, Button, Stamp, VerificationBadge } from "@/components/ui";
 import { cn } from "@/components/ui/cn";
+import { ShareRecapButton } from "@/components/recap/ShareRecapButton";
 import { PointsBreakdown } from "./PointsBreakdown";
 
 /**
@@ -26,6 +27,7 @@ export function StampMoment({
   stampedAt,
   status,
   slot,
+  names,
 }: {
   result: StampResult;
   countryName: string;
@@ -39,6 +41,8 @@ export function StampMoment({
   stampedAt?: Date | string;
   status?: ReactNode;
   slot?: ReactNode;
+  /** The other people at the table, for the recap's share text. */
+  names?: string[];
 }) {
   const copy = outcomeCopy(result.outcome);
   const p = result.points;
@@ -117,7 +121,15 @@ export function StampMoment({
         <Button size="lg" block disabled={doneDisabled} onClick={onDone}>
           {doneLabel}
         </Button>
-        {/* M4: the "Share recap" button goes here. */}
+        {result.visit_id !== PREDICTED_VISIT_ID && (
+          <ShareRecapButton
+            visitId={result.visit_id}
+            restaurantName={restaurantName}
+            countryName={countryName}
+            names={names}
+            totalPoints={result.points?.total ?? 0}
+          />
+        )}
       </div>
     </section>
   );

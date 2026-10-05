@@ -57,6 +57,7 @@ Tables as in brief section 5, with these exact names and the following additions
 - Every id is a uuid with `default gen_random_uuid()`, except `countries.iso2`.
 - `visits.client_key uuid` (nullable, unique per `created_by`): the idempotency key from `check_in`.
 - Members insert submissions directly (RLS: `submitted_by = auth.uid()`, `status = 'pending'`, caller in a group or curator); reviewer fields are curator-only.
+- `reactions`: each user selects, inserts and deletes only their own rows, on visits they can read (`20261005160000_reactions_privacy.sql`). Brief section 4 ("a 🤨 shows as a count, never with names") narrows section 5's "members read reactions": the feed gets everyone's reactions as counts from `visit_reaction_counts`, and the owner's flag list from `group_flagged_visits`.
 
 ### Views (`security_invoker = true`)
 
@@ -83,7 +84,9 @@ Tables as in brief section 5, with these exact names and the following additions
 | `set_visit_photo(p_visit_id uuid, p_photo_path text)` | void | Visit creator only. Raises `self_reported` to `photo` unless `downgraded_at` is set; copies to stamps |
 | `downgrade_visit(p_visit_id uuid)` | void | Owner of the visit's group. Sets `self_reported` and `downgraded_at`, copies to stamps, sets `flag_resolved_at` |
 | `dismiss_flag(p_visit_id uuid)` | void | Owner of the visit's group. Sets `flag_resolved_at` |
-| `group_leaderboard(p_group_id uuid, p_season bool)` | table(user_id uuid, display_name text, countries int, points int) | Members only. Applies `verified_only` and the season (brief section 3). Excludes backfilled stamps |
+| `visit_reaction_counts(p_visit_ids uuid[])` | table(visit_id uuid, emoji reaction_emoji, n int, mine boolean) | One row per visit and emoji that has reactions, only for visits in the caller's groups (others are silently skipped). `mine` = the caller is one of the `n`. No user ids |
+| `group_flagged_visits(p_group_id uuid)` | table(visit_id uuid, side_eye_count int, latest_side_eye_at timestamptz) | Owner only (raises otherwise). Visits with a `side_eye` newer than `flag_resolved_at` (any, if null); `side_eye_count` counts only those. Newest first. No user ids |
+| `group_leaderboard(p_group_id uuid, p_season bool)` | table(user_id uuid, display_name text, countries int, points int) | Members only. Applies `verified_only` and the season (brief section 3). Excludes backfilled stamps. `verified_only` filters stamps only: set awards always count in full (the leaderboard note says so) |
 | `group_together(p_group_id uuid, p_city_id uuid)` | table(stamped int, listed int) | Visit stamps of any member ∩ listed |
 | `group_gaps(p_group_id uuid, p_city_id uuid)` | table(country_iso2 text) | Listed countries no member has a visit stamp for |
 | `delete_my_account()` | text[] | Applies brief section 8, deletes the `auth.users` row, and returns the photo paths for the caller to remove from Storage |
@@ -141,14 +144,15 @@ After any confirmation:
 - **Pages:**
   - `/` (Passport), `/login`, `/join/[code]`
   - `/country/[iso2]`, `/restaurant/[id]`, `/check-in/[restaurantId]`, `/visit/[id]` (confirm, claim, nudge)
-  - `/group/[id]` (Together, leaderboard, feed, Gaps, Spin, plans, flags), `/group/[id]/plan/new`
+  - `/group/[id]` (Together, leaderboard, feed, Gaps, Spin, plans, flags), `/group/[id]/plan` (all upcoming plans), `/group/[id]/plan/new` (`?restaurant=`, `?date=`; from Spin the date defaults to next Friday)
   - `/map`, `/world`
   - `/settings`, `/settings/backfill`, `/curator`, `/privacy`, `/credits`
 - **Handlers (`src/app/api/`):**
   - `auth/callback`
   - `check-in` (POST)
-  - `visits/[id]/photo` (POST)
-  - `plans/[id]/ics` (GET)
+  - `visits/[id]/photo` (POST; idempotent for the creator once a photo is linked)
+  - `visits/[id]/recap` (GET, 1080x1350 PNG share card, members only, else 404)
+  - `plans/[id]/ics` (GET, `inline` text/calendar, members only, else 404)
   - `submissions` (POST, geocodes)
   - `account` (DELETE)
   - `keepalive` (GET, `CRON_SECRET`)

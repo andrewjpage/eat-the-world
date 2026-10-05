@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
+import { AddPhoto } from "@/components/photos/AddPhoto";
 import { StampMoment } from "@/components/stamp/StampMoment";
 import { Avatar, Badge, Button, Card, Flag } from "@/components/ui";
 import { cn } from "@/components/ui/cn";
@@ -343,9 +344,18 @@ export function CheckInFlow({
           </Button>
         </div>
       ) : (
-        <p role="status" className="sr-only">
-          Saved.
-        </p>
+        <>
+          <p role="status" className="sr-only">
+            Saved.
+          </p>
+          {/* Optional and after the save: never holds up the stamp or Done. */}
+          <AddPhoto
+            key={result.visit_id}
+            className="mt-4 w-full text-left"
+            visitId={result.visit_id}
+            onUploaded={(verification) => setResult((r) => (r ? { ...r, verification } : r))}
+          />
+        </>
       );
     return (
       <div className="fixed inset-0 z-50 overflow-y-auto bg-paper">
@@ -357,6 +367,7 @@ export function CheckInFlow({
             showNudge={save === "saved" && taggedCount > 0}
             doneDisabled={save !== "saved"}
             status={status}
+            names={group.members.filter((m) => tagged.includes(m.id)).map((m) => m.name)}
             onDone={() => router.push("/")}
           />
         </div>

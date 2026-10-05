@@ -180,7 +180,7 @@ test("location denied: self-reported, and no coordinates anywhere", async ({ bro
   await page.getByRole("button", { name: "Share my location" }).click();
   await expect(page.getByText(/Location is off for this site/)).toBeVisible();
   await page.getByRole("button", { name: "Continue unverified" }).click();
-  await page.getByRole("button", { name: /Next|Just me/ }).first().click();
+  await page.getByRole("button", { name: /^(Next|Just me)/ }).first().click();
   await page.getByRole("radio", { name: place.dish, exact: true }).click();
   await page.getByRole("button", { name: "Get my stamp" }).click();
   await expect(page.getByRole("heading", { name: "Stamped!" })).toBeVisible();
@@ -209,7 +209,7 @@ test("repeat visit: the same restaurant again is a repeat worth 0 points", async
   const checkIn = async () => {
     await page.goto(`/check-in/${place.id}`);
     await page.getByRole("button", { name: "Share my location" }).click();
-    await page.getByRole("button", { name: /Next|Just me/ }).first().click();
+    await page.getByRole("button", { name: /^(Next|Just me)/ }).first().click();
     await page.getByRole("radio", { name: place.dish, exact: true }).click();
     await page.getByRole("button", { name: "Get my stamp" }).click();
     await saved(page);

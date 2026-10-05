@@ -171,5 +171,5 @@ test("invite flow: create group, join, backfill, passport", async ({ page, brows
 
   // Group page lists both members.
   await page.reload();
-  await expect(page.getByText("Joiner B")).toBeVisible();
+  await expect(page.getByTestId("member-list").getByText("Joiner B")).toBeVisible();
 });

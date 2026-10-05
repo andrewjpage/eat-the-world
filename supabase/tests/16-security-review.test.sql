@@ -159,7 +159,8 @@ select is(
         'confirm_attendance', 'decline_attendance', 'claim_stamp', 'backfill_countries',
         'remove_backfilled_stamp', 'set_visit_photo', 'downgrade_visit', 'dismiss_flag',
         'group_leaderboard', 'group_together', 'group_gaps', 'delete_my_account',
-        'approve_submission', 'reject_submission')),
+        'approve_submission', 'reject_submission',
+        'visit_reaction_counts', 'group_flagged_visits')),
   '{}'::text[],
   'guard: authenticated executes only the API functions (no internal helpers or triggers)');
 

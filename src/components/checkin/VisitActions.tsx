@@ -36,6 +36,7 @@ export function VisitActions({
   restaurantName,
   pendingOthers,
   visitedAt,
+  otherNames = [],
 }: {
   visitId: string;
   mode: VisitMode;
@@ -48,6 +49,8 @@ export function VisitActions({
   pendingOthers: number;
   /** The visit date: a stamp is dated by its visit (earned_at), also when claimed later. */
   visitedAt: string;
+  /** The other people at the table (confirmed, or pending inside the window), for the recap. */
+  otherNames?: string[];
 }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -130,6 +133,7 @@ export function VisitActions({
             restaurantName={restaurantName}
             stampedAt={visitedAt}
             showNudge={pendingOthers > 0}
+            names={otherNames}
             onDone={() => {
               setResult(null);
               router.refresh();
