@@ -1,0 +1,57 @@
+{
+  "name": "eat-the-world",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "test": "vitest run",
+    "test:db": "supabase test db",
+    "test:e2e": "playwright test",
+    "seed": "tsx scripts/seed.ts",
+    "dev:login": "tsx scripts/dev-login.ts",
+    "dev:fixtures": "tsx scripts/dev-fixtures.ts",
+    "env:local": "bash scripts/env-local.sh",
+    "typecheck": "next typegen && tsc --noEmit",
+    "db:reset": "supabase db reset"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.117.2",
+    "flag-icons": "^7.5.0",
+    "leaflet": "^1.9.4",
+    "next": "16.3.8",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "react-leaflet": "^5.0.0",
+    "sharp": "^0.35.5",
+    "topojson-client": "^3.1.0",
+    "world-atlas": "^2.0.2"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@tailwindcss/postcss": "^4",
+    "@types/geojson": "^7946.0.16",
+    "@types/leaflet": "^1.9.22",
+    "@types/node": "^22.20.5",
+    "@types/pg": "^8.23.1",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/topojson-client": "^3.1.5",
+    "csv-parse": "^7.0.3",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.8",
+    "exiftool-vendored": "^38.3.0",
+    "pg": "^8.23.1",
+    "supabase": "^2.119.0",
+    "tailwindcss": "^4",
+    "tsx": "^4.23.15",
+    "typescript": "^5",
+    "vitest": "^5.0.3"
+  },
+  "engines": {
+    "node": ">=20.19"
+  }
+}

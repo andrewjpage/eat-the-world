@@ -1,0 +1,27 @@
+name: Keepalive
+
+# Backs up the Vercel cron: a free Supabase project pauses after a week of low activity.
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      APP_URL: ${{ secrets.APP_URL }}
+      CRON_SECRET: ${{ secrets.CRON_SECRET }}
+    steps:
+      - name: Ping /api/keepalive
+        run: |
+          if [ -z "$APP_URL" ] || [ -z "$CRON_SECRET" ]; then
+            echo "APP_URL or CRON_SECRET is not set; skipping."
+            exit 0
+          fi
+          curl --fail --silent --show-error --retry 3 --retry-delay 10 --max-time 60 \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "${APP_URL%/}/api/keepalive"

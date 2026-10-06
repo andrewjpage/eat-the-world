@@ -1,0 +1,21 @@
+.claude/worktrees/
+node_modules/
+.next/
+out/
+build/
+coverage/
+.env*
+!.env.example
+.vercel/
+*.tsbuildinfo
+.DS_Store
+npm-debug.log*
+supabase/.temp/
+supabase/.branches/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# per-agent dev build folders
+/.next-*/
