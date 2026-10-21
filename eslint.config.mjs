@@ -14,6 +14,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Solo build output.
+    "solo/dist/**",
+    "solo/dev-dist/**",
   ]),
 ]);
 

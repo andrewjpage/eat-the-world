@@ -1,0 +1,15 @@
+@import "../../src/app/globals.css";
+@import "@fontsource-variable/fraunces/full.css";
+@import "@fontsource-variable/dm-sans/index.css";
+@import "@fontsource/dm-mono/400.css";
+@import "@fontsource/dm-mono/500.css";
+
+/* The shared components and their classes live in the group app's tree. */
+@source "../../src";
+
+/* The group app sets these through next/font; here they name the self-hosted families. */
+:root {
+  --font-fraunces: "Fraunces Variable";
+  --font-dm-sans: "DM Sans Variable";
+  --font-dm-mono: "DM Mono";
+}
