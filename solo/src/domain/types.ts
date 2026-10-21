@@ -64,7 +64,7 @@ export interface SeedRestaurant {
   postcode: string | null;
   lat: number;
   lon: number;
-  confidence: "curated" | "flagged";
+  confidence: "curated" | "community" | "flagged";
   curatorNote: string | null;
   googlePlaceId: string | null;
 }

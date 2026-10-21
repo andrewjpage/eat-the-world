@@ -32,6 +32,16 @@ const slug = (...parts: string[]) =>
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 
+const CONFIDENCES: ReadonlyArray<SeedRestaurant["confidence"]> = ["curated", "community", "flagged"];
+
+/** The CSV value, defaulting to curated as scripts/seed.ts does; anything else is a typo. */
+function confidenceOf(row: Record<string, string>): SeedRestaurant["confidence"] {
+  const value = row.confidence || "curated";
+  const tier = CONFIDENCES.find((c) => c === value);
+  if (!tier) throw new Error(`Unknown confidence "${value}" for ${row.restaurant}`);
+  return tier;
+}
+
 function assertUnique(label: string, ids: string[]): void {
   const dupes = ids.filter((id, i) => ids.indexOf(id) !== i);
   if (dupes.length) throw new Error(`Duplicate ${label} ids: ${[...new Set(dupes)].join(", ")}`);
@@ -54,8 +64,7 @@ async function main() {
       postcode: r.postcode || null,
       lat: c.lat,
       lon: c.lon,
-      // Solo has no community tier: only the contested ones are marked.
-      confidence: r.confidence === "flagged" ? "flagged" : "curated",
+      confidence: confidenceOf(r),
       curatorNote: r.curator_note || null,
       googlePlaceId: r.google_place_id || null,
     };

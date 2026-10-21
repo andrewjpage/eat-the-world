@@ -57,16 +57,21 @@ describe("bundled seed", () => {
     expect(new Set(seed.restaurants.map((r) => r.id)).size).toBe(seed.restaurants.length);
   });
 
-  it("restaurants match the CSV: same names, countries and confidence flags", () => {
+  it("restaurants match the CSV: same names, countries and confidence", () => {
     const rows = csv("london-restaurants.csv");
-    expect(seed.restaurants.map((r) => [r.name, r.countryIso2, r.postcode])).toEqual(
-      rows.map((r) => [r.restaurant, r.country_iso2.toUpperCase(), r.postcode]),
+    expect(seed.restaurants.map((r) => [r.name, r.countryIso2, r.postcode, r.confidence])).toEqual(
+      rows.map((r) => [r.restaurant, r.country_iso2.toUpperCase(), r.postcode, r.confidence]),
     );
-    // The group app's "community" tier has no solo equivalent: only "flagged" shows as contested.
-    expect(seed.restaurants.filter((r) => r.confidence === "flagged")).toHaveLength(
-      rows.filter((r) => r.confidence === "flagged").length,
-    );
-    for (const r of seed.restaurants) expect(["curated", "flagged"]).toContain(r.confidence);
+  });
+
+  it("keeps all three confidence tiers: 48 curated, 5 community, 15 flagged", () => {
+    const count = (tier: string) => seed.restaurants.filter((r) => r.confidence === tier).length;
+    expect({ curated: count("curated"), community: count("community"), flagged: count("flagged") }).toEqual({
+      curated: 48,
+      community: 5,
+      flagged: 15,
+    });
+    for (const r of seed.restaurants) expect(["curated", "community", "flagged"]).toContain(r.confidence);
   });
 
   it("every restaurant belongs to a seeded country", () => {

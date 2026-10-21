@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-21T21:36:39.334Z",
+  "generatedAt": "2026-10-21T21:38:51.614Z",
   "countries": [
     {
       "iso2": "AF",
@@ -1874,7 +1874,7 @@
       "postcode": "E10 6PY",
       "lat": 51.568293,
       "lon": -0.008923,
-      "confidence": "curated",
+      "confidence": "community",
       "curatorNote": "Mauritian street food in Leyton, formerly Mauritian Delights: dhall puri, biryani, curries. Walk-ins; reportedly cash only.",
       "googlePlaceId": "ChIJk6UBdI8ddkgRXs3RLmTAh1s"
     },
@@ -1946,7 +1946,7 @@
       "postcode": "W10 6HJ",
       "lat": 51.517393,
       "lon": -0.210239,
-      "confidence": "curated",
+      "confidence": "community",
       "curatorNote": "Venezuelan arepas, cachapas and empanadas on gluten-free corn. Street-food style, with sister sites around London.",
       "googlePlaceId": "ChIJo0OzfUsRdkgRCRvB3KmMwfQ"
     },
@@ -2462,7 +2462,7 @@
       "postcode": "W2 1DW",
       "lat": 51.519075,
       "lon": -0.168315,
-      "confidence": "curated",
+      "confidence": "community",
       "curatorNote": "Yemeni mandi and haneeth with floor seating on Edgware Road.",
       "googlePlaceId": "ChIJZx0XOT8bdkgRYDV-yOhgsag"
     },
@@ -2474,7 +2474,7 @@
       "postcode": "W2 2HZ",
       "lat": 51.515462,
       "lon": -0.163848,
-      "confidence": "curated",
+      "confidence": "community",
       "curatorNote": "Newer Yemeni: mandi, haneeth, zurbian, malawah. Table or floor seating. Halal.",
       "googlePlaceId": "ChIJs2BdIy8bdkgRWO3CIVKH55M"
     },
@@ -2510,7 +2510,7 @@
       "postcode": "W2 1EB",
       "lat": 51.521694,
       "lon": -0.171943,
-      "confidence": "curated",
+      "confidence": "community",
       "curatorNote": "Iraqi and Kurdish grill: kebabs and big portions. Kurdish-leaning rather than purely Iraqi.",
       "googlePlaceId": "ChIJgW7FLwAbdkgRE_AtF40Jlso"
     },
