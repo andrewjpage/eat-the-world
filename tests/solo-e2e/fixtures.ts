@@ -1,12 +1,34 @@
 import { expect, test as base, type Page } from "@playwright/test";
 import { DB_NAME, DB_VERSION, SETTINGS_KEY, STORE_NAMES, type SoloData } from "../../solo/src/db/schema";
 
+/** A 1x1 transparent PNG. */
+const BLANK_TILE = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAADUlEQVQImWNgYGBgAAAABQABh6FO1AAAAABJRU5ErkJggg==",
+  "base64",
+);
+
 /**
  * `test` for the solo specs. Every page in the test, including ones opened later in the same
  * context, must finish without an uncaught error or a console error, unless the spec lists it in
  * `ignoreErrors`. A screen that blanks itself would otherwise only fail on the assertion after it.
  */
-export const test = base.extend<{ ignoreErrors: RegExp | null; noPageErrors: void }>({
+export const test = base.extend<{ ignoreErrors: RegExp | null; noPageErrors: void; tileRequests: string[] }>({
+  /**
+   * Every OpenStreetMap tile the page asks for is answered with a blank image, so a map screen
+   * never needs the network (a failed tile load is a console error). The list is the tile URLs
+   * requested, to show the tiles came from OpenStreetMap and nowhere else.
+   */
+  tileRequests: [
+    async ({ context }, use) => {
+      const urls: string[] = [];
+      await context.route("https://tile.openstreetmap.org/**", (route) => {
+        urls.push(route.request().url());
+        return route.fulfill({ status: 200, contentType: "image/png", body: BLANK_TILE });
+      });
+      await use(urls);
+    },
+    { auto: true },
+  ],
   ignoreErrors: [null, { option: true }],
   noPageErrors: [
     async ({ context, ignoreErrors }, use) => {

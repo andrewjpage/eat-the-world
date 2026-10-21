@@ -28,8 +28,8 @@ test("the parameterised routes open their screens, under the Passport tab", asyn
   const nav = page.getByRole("navigation", { name: "Main" });
 
   for (const [hash, screen] of [
-    ["#/country/FR", "Country"],
-    ["#/restaurant/seed:enish-oxford-street-w1t-3ld", "Restaurant"],
+    ["#/country/FR", "France"],
+    ["#/restaurant/seed:enish-oxford-street-w1t-3ld", "Enish (Oxford Street)"],
     ["#/visit/abc", "Visit"],
   ]) {
     await page.goto(`./${hash}`);

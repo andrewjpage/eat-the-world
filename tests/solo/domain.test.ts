@@ -328,6 +328,29 @@ describe("soloPins", () => {
     expect(pin.state).toBe("new");
   });
 
+  it("keeps a copied suggestion's confidence, curator note and postcode on my copy", () => {
+    const copied = restaurant("r-ng", "NG", { seedId: "seed:ng-a", name: "Akoko", lat: 51.52, lon: -0.13 });
+    const [pin] = soloPins({
+      suggestions: [seedRestaurant("seed:ng-a", "NG", { confidence: "flagged", curatorNote: "Pan-regional." })],
+      own: [copied],
+      visits: [],
+      stamps: [],
+      countryNames,
+    });
+    expect(pin).toMatchObject({
+      id: "r-ng",
+      confidence: "flagged",
+      curator_note: "Pan-regional.",
+      postcode: "W1T 3LD",
+    });
+  });
+
+  it("falls back to community confidence when the copied suggestion is no longer in the seed", () => {
+    const orphan = restaurant("r-ng", "NG", { seedId: "seed:gone", lat: 51.52, lon: -0.13 });
+    const [pin] = soloPins({ suggestions: [], own: [orphan], visits: [], stamps: [], countryNames });
+    expect(pin).toMatchObject({ id: "r-ng", confidence: "community", curator_note: null });
+  });
+
   it("leaves a restaurant without coordinates off the map", () => {
     const noCoords = [
       restaurant("r-a", "FR", { lat: null, lon: null }),

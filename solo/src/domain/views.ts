@@ -60,8 +60,9 @@ export function buildWorldData(input: {
 
 /**
  * Map pins for the seed suggestions plus my own restaurants. A suggestion I have already copied
- * shows once, as my copy. Restaurants without coordinates are left off. The shared "friend has been
- * here" ring marks the restaurants I have visited.
+ * shows once, as my copy, with the suggestion's confidence, curator note and postcode. Restaurants
+ * without coordinates are left off. The shared "friend has been here" ring marks the restaurants I
+ * have visited.
  */
 export function soloPins(input: {
   suggestions: SeedRestaurant[];
@@ -87,24 +88,26 @@ export function soloPins(input: {
       curator_note: s.curatorNote,
     }));
 
-  const fromOwn: MapRestaurant[] = input.own.flatMap((r) =>
-    r.lat === null || r.lon === null
-      ? []
-      : [
-          {
-            id: r.id,
-            name: r.name,
-            country_iso2: r.countryIso2,
-            address: r.address,
-            postcode: null,
-            lat: r.lat,
-            lon: r.lon,
-            status: "active" as const,
-            confidence: "community" as const,
-            curator_note: null,
-          },
-        ],
-  );
+  const suggestionById = new Map(input.suggestions.map((s) => [s.id, s]));
+  const fromOwn: MapRestaurant[] = input.own.flatMap((r) => {
+    if (r.lat === null || r.lon === null) return [];
+    // A copy keeps what the curator said about its suggestion; one added by hand is community.
+    const origin = r.seedId ? suggestionById.get(r.seedId) : undefined;
+    return [
+      {
+        id: r.id,
+        name: r.name,
+        country_iso2: r.countryIso2,
+        address: r.address,
+        postcode: origin?.postcode ?? null,
+        lat: r.lat,
+        lon: r.lon,
+        status: "active" as const,
+        confidence: origin?.confidence ?? ("community" as const),
+        curator_note: origin?.curatorNote ?? null,
+      },
+    ];
+  });
 
   const visitStamped = new Set(input.stamps.filter((s) => s.kind === "visit").map((s) => s.countryIso2));
   const visited = new Set(input.visits.map((v) => v.restaurantId));
