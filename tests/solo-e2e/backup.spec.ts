@@ -317,6 +317,31 @@ test.describe("export and import", () => {
     expect(file.visits).toHaveLength(3);
   });
 
+  test("replacing with a backup made without photos keeps this phone's photos for the file's visits", async ({
+    page,
+  }, testInfo) => {
+    await noShareSheet(page);
+    await open(page, "/settings", PASSPORT, true);
+    await putPhoto(page, "loose");
+
+    await page.getByRole("checkbox", { name: /Include photos/ }).uncheck();
+    const saved = await exportBackup(page, testInfo);
+    expect(JSON.parse(readFileSync(saved.path, "utf8"))).not.toHaveProperty("photos");
+
+    await page.getByLabel("Backup file").setInputFiles(saved.path);
+    await page.getByRole("dialog", { name: "Import this backup" }).getByRole("button", { name: "Replace everything" }).click();
+    const confirm = page.getByRole("dialog", { name: "Replace everything?" });
+    await expect(confirm).toContainText(
+      "Photos on this phone that the file's visits use are kept. Any other photos on this phone are removed.",
+    );
+    await confirm.getByRole("button", { name: "Yes, replace everything" }).click();
+    await expect(toast(page, "Backup restored.")).toBeVisible();
+
+    // p1 belongs to a visit in the file, so it stays; "loose" belongs to none, so Replace removes it.
+    expect(await rows(page, "photos")).toEqual([{ id: "p1", type: "image/png", bytes: [...PNG] }]);
+    expect(await rows(page, "visits")).toHaveLength(3);
+  });
+
   test("offers no photo choice when there are no photos", async ({ page }) => {
     await open(page, "/settings", PASSPORT);
     await expect(page.getByRole("checkbox")).toHaveCount(0);
@@ -446,7 +471,9 @@ test.describe("the backup reminder", () => {
     await open(page, "/", { restaurants: PASSPORT.restaurants, visits: recentVisits(10), backfills: [] });
 
     await expect(reminder(page)).toBeVisible();
-    await reminder(page).getByRole("link", { name: "Back up" }).click();
+    const backUp = reminder(page).getByRole("link", { name: "Back up" });
+    expect((await backUp.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    await backUp.click();
     await expect(page).toHaveURL(/#\/settings$/);
     await exportBackup(page, testInfo);
 

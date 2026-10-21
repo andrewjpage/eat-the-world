@@ -24,7 +24,7 @@ export function BackupNudge() {
   return (
     <Card tone="sunk" className="mb-4 flex items-center gap-2 py-3 pr-2" role="note" aria-label="Backup reminder">
       <p className="flex-1 text-sm text-ink-soft">Your passport only lives on this phone. Time for a backup?</p>
-      <ButtonLink href="/settings" size="sm" variant="secondary">
+      <ButtonLink href="/settings" size="md" variant="secondary">
         Back up
       </ButtonLink>
       <button

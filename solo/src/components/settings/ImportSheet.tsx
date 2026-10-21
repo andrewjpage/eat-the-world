@@ -43,7 +43,7 @@ export function ImportSheet({ backup, onClose }: { backup: BackupFile; onClose: 
       console.error("Eat the World: the backup could not be imported", error);
       setFailed(true);
       setBusy(null);
-      reload().catch(() => {});
+      reload().catch((reloadError) => console.error("Eat the World: storage could not be read again", reloadError));
     }
   }
 
@@ -79,7 +79,8 @@ export function ImportSheet({ backup, onClose }: { backup: BackupFile; onClose: 
           This erases the {plural(data.visits.length, "visit")} and {plural(data.backfills.length, "country", "countries")}{" "}
           from before the app that are on this phone, and puts the file&apos;s{" "}
           {plural(backup.visits.length, "visit")} and {plural(backup.backfills.length, "country", "countries")} in
-          their place. It can&apos;t be undone.
+          their place. Photos on this phone that the file&apos;s visits use are kept. Any other photos on this phone
+          are removed. It can&apos;t be undone.
         </p>
       ) : (
         <div className="space-y-3 text-[0.95rem] text-ink-soft">

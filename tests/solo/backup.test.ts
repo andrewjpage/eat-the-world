@@ -256,6 +256,52 @@ describe("export and import", () => {
     expect((await target.allPhotos()).size).toBe(0);
   });
 
+  it("replace with a backup made without photos keeps the photos the file's visits name", async () => {
+    const source = await freshStore();
+    await populate(source);
+    const withoutPhotos = await exportText(source, false);
+    expect(JSON.parse(withoutPhotos)).not.toHaveProperty("photos");
+
+    const parsed = await importText(source, withoutPhotos, "replace");
+    expect(parsed.ok).toBe(true);
+
+    const photos = await source.allPhotos();
+    expect([...photos.keys()].sort()).toEqual(["p1", "p2"]);
+    expect(new Uint8Array(await photos.get("p2")!.arrayBuffer())).toEqual(bytes(100_003, 5));
+    expect((await source.load()).visits.map((v) => v.photoId).sort()).toEqual([null, "p1", "p2"]);
+  });
+
+  it("replace still removes photos on the phone that none of the file's visits name", async () => {
+    const target = await freshStore();
+    await target.putRestaurant(restaurant("r1"));
+    await target.putRestaurant(restaurant("old"));
+    await target.putVisit(visit("v1", { photoId: "p1" }));
+    await target.putVisit(visit("old-v", { restaurantId: "old", photoId: "old-p" }));
+    await target.putPhoto("p1", jpeg(12, 3));
+    await target.putPhoto("old-p", jpeg(8));
+    await target.putPhoto("loose", jpeg(5));
+
+    // The file has v1 (and so p1) plus a visit whose photo this phone never had.
+    const file = validFile({ visits: [visit("v1", { photoId: "p1" }), visit("v2", { photoId: "never-had" })] });
+    await importText(target, JSON.stringify(file), "replace");
+
+    const photos = await target.allPhotos();
+    expect([...photos.keys()]).toEqual(["p1"]);
+    expect(new Uint8Array(await photos.get("p1")!.arrayBuffer())).toEqual(bytes(12, 3));
+    expect((await target.load()).visits.map((v) => v.id).sort()).toEqual(["v1", "v2"]);
+  });
+
+  it("replace takes the file's own photo over the phone's when both have one", async () => {
+    const source = await freshStore();
+    await populate(source);
+    const text = await exportText(source);
+
+    await source.putPhoto("p1", jpeg(10, 99));
+    await importText(source, text, "replace");
+
+    expect(new Uint8Array(await (await source.getPhoto("p1"))!.arrayBuffer())).toEqual(bytes(10));
+  });
+
   it("a backup without photos merged into a store with photos leaves them", async () => {
     const source = await freshStore();
     await populate(source);
@@ -354,7 +400,7 @@ describe("a file that is not a usable backup", () => {
     ["a date that is not zero padded", visit("v1", { visitedOn: "2026-2-3" })],
     ["a date before 1900", visit("v1", { visitedOn: "1899-12-31" })],
     ["a date that is not a date", visit("v1", { visitedOn: "yesterday" })],
-    ["a future date", visit("v1", { visitedOn: "2026-10-22" })],
+    ["a date two days ahead", visit("v1", { visitedOn: "2026-10-23" })],
     ["a note that is too long", visit("v1", { note: "x".repeat(MAX_NOTE + 1) })],
     ["a dish name that is too long", visit("v1", { dishOther: "x".repeat(MAX_DISH_OTHER + 1) })],
     ["no id", visit("", {})],
@@ -372,6 +418,10 @@ describe("a file that is not a usable backup", () => {
       visit("v3", { note: "x".repeat(MAX_NOTE), dishOther: "y".repeat(MAX_DISH_OTHER), rating: null }),
     ];
     expect(parse(validFile({ visits }))).toMatchObject({ ok: true });
+  });
+
+  it("accepts tomorrow's date, which a phone across the date line can already be on", () => {
+    expect(parse(validFile({ visits: [visit("v1", { visitedOn: "2026-10-22" })] }))).toMatchObject({ ok: true });
   });
 
   it.each([

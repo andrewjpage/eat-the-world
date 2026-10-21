@@ -8,6 +8,8 @@ import { isRating, isRealDate } from "@solo/services/visits";
 export const BACKUP_APP = "eat-the-world-solo";
 export const BACKUP_SCHEMA_VERSION = 1;
 
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
 export interface BackupFile {
   app: string;
   schemaVersion: number;
@@ -156,7 +158,8 @@ function photosOf(file: Row): BackupFile["photos"] {
 
 /**
  * Reads a backup file's text and checks every record in it, so nothing half-valid is ever written.
- * Checks use the same date, rating and length rules as logging a visit. `seed` and `now` are for tests.
+ * Checks use the same date, rating and length rules as logging a visit, except that a date one day
+ * ahead is accepted (time zones). `seed` and `now` are for tests.
  */
 export function parseBackup(text: string, options: { seed?: SeedData; now?: Date } = {}): ParseResult {
   const { seed = bundledSeed, now = new Date() } = options;
@@ -185,7 +188,10 @@ export function parseBackup(text: string, options: { seed?: SeedData; now?: Date
   try {
     const exportedAt = isTime(file.exportedAt) ? file.exportedAt : invalid("The file doesn't say when it was made.");
     const restaurants = restaurantsOf(file, seed);
-    const visits = visitsOf(file, restaurants, localToday(now));
+    // Time zones span about 26 hours, so a visit logged "today" in Auckland is tomorrow's date in London or
+    // Los Angeles. Import allows one day of slack so the phone's own export still restores; logging a visit
+    // and editing one keep the strict rule.
+    const visits = visitsOf(file, restaurants, localToday(new Date(now.getTime() + ONE_DAY_MS)));
     const backfills = backfillsOf(file, seed);
     const photos = photosOf(file);
     const backup: BackupFile = {
