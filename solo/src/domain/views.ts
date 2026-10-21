@@ -1,3 +1,4 @@
+import { displayName } from "@/lib/countries";
 import { summarisePassport, type PassportSummary } from "@/lib/passport";
 import { buildPins, type MapRestaurant, type Pin } from "@/components/map/pins";
 import type { WorldData } from "@/components/world/states";
@@ -12,8 +13,6 @@ import type { SeedCountry, SeedRestaurant, SoloRestaurant, SoloStamp, SoloVisit 
 export function stampDate(earnedOn: string): string {
   return `${earnedOn}T12:00:00Z`;
 }
-
-const displayName = (c: SeedCountry) => c.name || c.iso_name || c.iso2;
 
 export function buildPassport(input: {
   countries: SeedCountry[];
