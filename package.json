@@ -11,6 +11,7 @@
     "test:db": "supabase test db",
     "test:e2e": "playwright test",
     "seed": "tsx scripts/seed.ts",
+    "solo:seed": "tsx scripts/solo-seed.ts",
     "dev:login": "tsx scripts/dev-login.ts",
     "dev:fixtures": "tsx scripts/dev-fixtures.ts",
     "env:local": "bash scripts/env-local.sh",
