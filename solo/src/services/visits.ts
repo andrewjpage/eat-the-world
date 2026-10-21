@@ -50,7 +50,7 @@ const EARLIEST = "1900-01-01";
 const newId = () => crypto.randomUUID();
 
 /** Zero-padded YYYY-MM-DD that exists on the calendar, and not absurdly long ago. */
-function isRealDate(date: string): boolean {
+export function isRealDate(date: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || date < EARLIEST) return false;
   const [y, m, d] = date.split("-").map(Number);
   const at = new Date(Date.UTC(y, m - 1, d));
@@ -63,10 +63,14 @@ function checkDate(visitedOn: string, now: Date): string {
   return visitedOn;
 }
 
+export function isRating(rating: unknown): rating is 1 | 2 | 3 | 4 | 5 {
+  return typeof rating === "number" && Number.isInteger(rating) && rating >= 1 && rating <= 5;
+}
+
 function checkRating(rating: number | null): 1 | 2 | 3 | 4 | 5 | null {
   if (rating === null) return null;
-  if (!Number.isInteger(rating) || rating < 1 || rating > 5) throw new VisitError(BAD_RATING);
-  return rating as 1 | 2 | 3 | 4 | 5;
+  if (!isRating(rating)) throw new VisitError(BAD_RATING);
+  return rating;
 }
 
 /** Trimmed; blank becomes null; over `max` is refused with `tooLong`. */
