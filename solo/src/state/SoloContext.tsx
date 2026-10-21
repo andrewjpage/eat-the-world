@@ -55,8 +55,11 @@ export function SoloProvider({ children }: { children: ReactNode }) {
         setData(loaded);
         setStatus("ready");
       })
-      .catch(() => {
-        if (live) setStatus("unavailable");
+      .catch((error) => {
+        if (!live) return;
+        // The screen only says storage is unavailable; the console says why (a blocked window, a bad row).
+        console.error("Eat the World: storage could not be opened or read", error);
+        setStatus("unavailable");
       });
     return () => {
       live = false;

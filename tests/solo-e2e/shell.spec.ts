@@ -57,17 +57,27 @@ test("a new screen starts at the top of the page", async ({ page }) => {
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
 });
 
-test("a window that cannot store anything says so instead of opening the app", async ({ page }) => {
-  await page.addInitScript(() => {
-    indexedDB.open = () => {
-      throw new DOMException("The operation is insecure.", "SecurityError");
-    };
-  });
-  await page.goto("./");
+test.describe("a window that cannot store anything", () => {
+  // The app logs why it gave up, so a blocked window or a corrupt row can be diagnosed; expected here.
+  test.use({ ignoreErrors: /Eat the World: storage/ });
 
-  await expect(page.getByRole("heading", { name: "Storage is unavailable in this window" })).toBeVisible();
-  await expect(page.getByRole("navigation")).toHaveCount(0);
-  await expect(page.getByRole("banner")).toHaveCount(0);
+  test("says so instead of opening the app, and logs the reason", async ({ page }) => {
+    const logged: string[] = [];
+    page.on("console", (message) => {
+      if (message.type() === "error") logged.push(message.text());
+    });
+    await page.addInitScript(() => {
+      indexedDB.open = () => {
+        throw new DOMException("The operation is insecure.", "SecurityError");
+      };
+    });
+    await page.goto("./");
+
+    await expect(page.getByRole("heading", { name: "Storage is unavailable in this window" })).toBeVisible();
+    await expect(page.getByRole("navigation")).toHaveCount(0);
+    await expect(page.getByRole("banner")).toHaveCount(0);
+    await expect.poll(() => logged.some((text) => /Eat the World: storage[\s\S]*StoreUnavailableError/.test(text))).toBe(true);
+  });
 });
 
 test.describe("a screen whose code cannot be fetched", () => {
@@ -123,7 +133,9 @@ test.describe("two windows on the same data", () => {
         (type === "focus" ? window : document).dispatchEvent(new Event(type));
       }, regained);
 
-      await expect(page.getByRole("img", { name: "Spain, before the app" })).toBeVisible();
+      await expect(
+        page.getByRole("region", { name: "Your stamps" }).getByRole("img", { name: "Spain, before the app" }),
+      ).toBeVisible();
       await expect(page.getByRole("heading", { name: "Your passport is blank" })).toHaveCount(0);
     });
   }
