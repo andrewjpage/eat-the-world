@@ -17,6 +17,8 @@ function appConstants(): Plugin {
 
 export default defineConfig({
   root: here("."),
+  // Relative asset URLs, so the build works under any path (GitHub Pages serves it at /eat-the-world/).
+  base: "./",
   plugins: [react(), tailwindcss(), appConstants()],
   resolve: {
     alias: {

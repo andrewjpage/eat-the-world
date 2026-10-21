@@ -13,3 +13,8 @@
   --font-dm-sans: "DM Sans Variable";
   --font-dm-mono: "DM Mono";
 }
+
+/* A stamp scales past the screen edge as it inks in; without this the phone widens the page for half a second. */
+#root {
+  overflow-x: clip;
+}

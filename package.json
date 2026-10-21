@@ -10,6 +10,7 @@
     "test": "vitest run",
     "test:db": "supabase test db",
     "test:e2e": "playwright test",
+    "test:solo-e2e": "playwright test --config playwright.solo.config.ts",
     "seed": "tsx scripts/seed.ts",
     "solo:seed": "tsx scripts/solo-seed.ts",
     "dev:login": "tsx scripts/dev-login.ts",
