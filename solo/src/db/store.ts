@@ -23,6 +23,8 @@ export interface SoloStore {
   deleteBackfill(iso2: string): Promise<void>;
   putPhoto(id: string, blob: Blob): Promise<void>;
   getPhoto(id: string): Promise<Blob | null>;
+  /** Removes one photo. A visit that still names it is left as it is, so point the visit elsewhere first. */
+  deletePhoto(id: string): Promise<void>;
   allPhotos(): Promise<Map<string, Blob>>;
   setSettings(patch: Partial<SoloSettings>): Promise<void>;
   /**
@@ -148,6 +150,10 @@ function createStore(db: Db): SoloStore {
 
     async getPhoto(id) {
       return (await db.get("photos", id)) ?? null;
+    },
+
+    async deletePhoto(id) {
+      await db.delete("photos", id);
     },
 
     allPhotos: () =>

@@ -159,6 +159,18 @@ describe("deleting", () => {
     expect(await store.getPhoto("orphan")).not.toBeNull();
   });
 
+  it("deletePhoto removes that photo only, and ignores an unknown id", async () => {
+    const { store } = await freshStore();
+    await store.putPhoto("p1", photo("one"));
+    await store.putPhoto("p2", photo("two"));
+
+    await store.deletePhoto("p1");
+    await store.deletePhoto("never-existed");
+
+    expect(await store.getPhoto("p1")).toBeNull();
+    expect(await (await store.getPhoto("p2"))?.text()).toBe("two");
+  });
+
   it("deleteBackfill removes only that country", async () => {
     const { store } = await freshStore();
     await store.putBackfills([backfill("IT"), backfill("ES")]);

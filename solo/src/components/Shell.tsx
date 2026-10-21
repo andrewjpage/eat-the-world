@@ -1,6 +1,7 @@
 import { useEffect, type ReactNode } from "react";
 import { APP_NAME } from "@/lib/app";
 import { LogoMark } from "@/components/nav/TopBar";
+import { matchRoute } from "@solo/router";
 import Link from "@solo/shims/link";
 import { usePathname } from "@solo/shims/navigation";
 import { SoloNav } from "./SoloNav";
@@ -19,9 +20,13 @@ function TopBar() {
   );
 }
 
-/** The top bar, the routed screen and the bottom nav. */
+/**
+ * The top bar, the routed screen and the bottom nav. The check-in is a full-screen flow without
+ * them, so a stray thumb on the nav can't throw away a half-done check-in.
+ */
 export function Shell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const chrome = matchRoute(pathname).name !== "check-in";
 
   // A hash change keeps the scroll position; a new screen starts at the top. The braces matter:
   // Chrome's scrollTo returns a Promise, and an effect must not return one.
@@ -31,11 +36,11 @@ export function Shell({ children }: { children: ReactNode }) {
 
   return (
     <>
-      <TopBar />
+      {chrome && <TopBar />}
       <main id="main" className="flex flex-1 flex-col">
         {children}
       </main>
-      <SoloNav />
+      {chrome && <SoloNav />}
     </>
   );
 }

@@ -11,13 +11,19 @@ test("the bottom bar reaches every tab and lights the one you are on", async ({ 
     ["Map", "Map"],
     ["World", "World"],
     ["Settings", "Settings"],
-    ["Check in", "Check in"],
   ]) {
     await nav.getByRole("link", { name: tab }).click();
     await expect(page.getByRole("heading", { name: screen })).toBeVisible();
     await expect(nav.getByRole("link", { name: tab })).toHaveAttribute("aria-current", "page");
     await expect(nav.locator("[aria-current]")).toHaveCount(1);
   }
+
+  // The centre button opens the check-in, a full-screen flow with no bar to leave it by.
+  await nav.getByRole("link", { name: "Check in" }).click();
+  await expect(page.getByRole("heading", { name: "Where did you eat?" })).toBeVisible();
+  await expect(nav).toHaveCount(0);
+  await page.getByRole("button", { name: "Back" }).click();
+  await expect(nav).toBeVisible();
 
   await nav.getByRole("link", { name: "Passport" }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("0 / 249 countries");
@@ -30,7 +36,7 @@ test("the parameterised routes open their screens, under the Passport tab", asyn
   for (const [hash, screen] of [
     ["#/country/FR", "France"],
     ["#/restaurant/seed:enish-oxford-street-w1t-3ld", "Enish (Oxford Street)"],
-    ["#/visit/abc", "Visit"],
+    ["#/visit/abc", "No such visit"],
   ]) {
     await page.goto(`./${hash}`);
     await expect(page.getByRole("heading", { name: screen })).toBeVisible();
