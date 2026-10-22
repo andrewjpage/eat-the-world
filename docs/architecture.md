@@ -15,6 +15,7 @@ The brief (`eat-the-world-london-brief.md`) is the spec. This file fixes the nam
 | `tests/unit/` | Vitest (`npm test`) |
 | `tests/e2e/` | Playwright (`npm run test:e2e`) at 390×844 |
 | `docs/screens/M<n>/` | Committed milestone screenshots |
+| `solo/`, `tests/solo*/` | The offline single-user build: no Supabase, no Next. It imports from `src/` and stores in IndexedDB. See `docs/solo.md` |
 
 Next.js 16 differs from older versions. Read the relevant guide in `node_modules/next/dist/docs/` before writing Next code. For example, session refresh lives in `proxy.ts`, not `middleware.ts`, if the docs say so.
 
