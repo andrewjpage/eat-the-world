@@ -55,7 +55,7 @@ export function StorageSection() {
     <Section title="Storage">
       {persistence === "granted" && (
         <p>
-          <strong className="text-verified-teal">Protected.</strong> The browser won&apos;t clear your passport to free
+          <strong className="text-ink">Protected.</strong> The browser won&apos;t clear your passport to free
           up space.
         </p>
       )}

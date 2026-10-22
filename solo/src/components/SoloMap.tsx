@@ -1,3 +1,11 @@
+// A copy of src/components/map/LondonMap.tsx. KEEP IN STEP with it; delete this and MapCards.tsx once
+// LondonMap takes optional props for the wording and the check-in link. Why it is a copy, and the other
+// two copies: docs/solo.md, "Known copies of shared components".
+// Intentional differences from LondonMap (the first three live in MapCards.tsx):
+//  - the ring reads "You've been here", not "A friend's been" / "A friend has been";
+//  - the card's action is "Log a visit", linking to /check-in?restaurant=<id>, not "Check in" to /check-in/<id>;
+//  - no "Reported closed" badge (solo restaurants have no status);
+//  - no empty-map fallback centred on London: MapView shows an empty state instead of rendering this with no pins.
 import "leaflet/dist/leaflet.css";
 import "@/components/map/map.css";
 import L from "leaflet";

@@ -11,6 +11,7 @@
     "test:db": "supabase test db",
     "test:e2e": "playwright test",
     "test:solo-e2e": "playwright test --config playwright.solo.config.ts",
+    "solo:screens": "SOLO_SCREENS=1 playwright test --config playwright.solo.config.ts tests/solo-e2e/screens.spec.ts",
     "seed": "tsx scripts/seed.ts",
     "solo:seed": "tsx scripts/solo-seed.ts",
     "dev:login": "tsx scripts/dev-login.ts",

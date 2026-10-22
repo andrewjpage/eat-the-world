@@ -1,3 +1,10 @@
+// A copy of Legend and PinCard in src/components/map/LondonMap.tsx. KEEP IN STEP with them; delete this
+// and SoloMap.tsx once LondonMap takes optional props for the wording and the check-in link. Why it is a
+// copy, and the other two copies: docs/solo.md, "Known copies of shared components".
+// Intentional differences from LondonMap:
+//  - the ring reads "You've been here", not "A friend's been" (legend) / "A friend has been" (card);
+//  - the card's action is "Log a visit", linking to /check-in?restaurant=<id>, not "Check in" to /check-in/<id>;
+//  - no "Reported closed" badge (solo restaurants have no status).
 import { Badge, ContestedBadge } from "@/components/ui/Badge";
 import { ButtonLink } from "@/components/ui/Button";
 import { Flag } from "@/components/ui/Flag";

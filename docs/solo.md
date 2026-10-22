@@ -12,7 +12,8 @@ It is not a client of the group app: no sign-in, groups, friends, points, sets, 
 | `npm run solo:build` | Production build into `solo/dist`. |
 | `npm run solo:preview -- --base /eat-the-world/ --port 4173` | Serves the build as GitHub Pages will, at `http://localhost:4173/eat-the-world/`. |
 | `npx vitest run tests/solo` | Unit tests. |
-| `npm run test:solo-e2e` | Playwright at 390x844. Builds and serves the app itself, and rewrites the pictures in `docs/screens/solo/`. |
+| `npm run test:solo-e2e` | Playwright at 390x844. Builds and serves the app itself; it leaves the repository untouched. |
+| `npm run solo:screens` | The same suite's screens spec only, which rewrites the pictures in `docs/screens/solo/` (run it after a visual change and commit the result). |
 | `npm run solo:seed` | Regenerates `solo/src/data/seed.json` from `seed/` and postcodes.io (needs network). Commit the result. |
 
 `.github/workflows/ci.yml` runs the unit tests and the Playwright suite in its `solo` job, and fails if the build mentions `supabase`.
@@ -25,7 +26,7 @@ One-time setup:
 
 1. Make the repository public (free GitHub accounts serve Pages only from public repositories). Work through the checklist below first.
 2. Settings > Pages > Source: **GitHub Actions**.
-3. Run the workflow once from the Actions tab (Solo on GitHub Pages > Run workflow), or merge a change to `main`.
+3. Merge this branch to `main` once steps 1 and 2 are done. The push runs the workflow and publishes the site; the Actions tab only lists the workflow once its file is on `main`. Later redeploys can use Actions > Solo on GitHub Pages > Run workflow.
 
 Pages cannot set response headers, so the page carries `<meta name="robots" content="noindex, nofollow">` instead.
 
@@ -33,7 +34,7 @@ If the repository stays private, use Cloudflare Pages instead: connect the repos
 
 ### Before making the repo public
 
-- [ ] `.github/workflows/backup.yml` uploads a weekly `supabase db dump` (schema and data) as a workflow artifact kept for 90 days. In a public repository anyone signed in to GitHub can download it. Delete the existing `supabase-backup-*` artifacts (Actions > the workflow runs), and encrypt or remove the upload, before the switch.
+- [ ] `.github/workflows/backup.yml` uploads a weekly `supabase db dump` (schema and data) as a workflow artifact kept for 90 days. In a public repository anyone signed in to GitHub can download it. Delete the existing `supabase-backup-*` artifacts (Actions > the workflow runs), and encrypt or remove the upload, or disable the Backup workflow (Actions > Backup > ... > Disable workflow), since its schedule keeps producing new artifacts, before the switch.
 - [ ] The code, the docs and the workflow logs become public. The history was scanned for obvious secrets (JWTs, `sb_secret_` keys, GitHub tokens, private keys, credentialed database URLs) and none were found, but a pattern match is not a guarantee. Rotate anything doubtful.
 
 ## Installing on Android

@@ -1,3 +1,9 @@
+// A copy of src/components/checkin/DishRatingFields.tsx. KEEP IN STEP with it; delete this once
+// DishRatingFields takes an optional prop for the hint and placeholder. Why it is a copy, and the other
+// copies: docs/solo.md, "Known copies of shared components".
+// Intentional differences from DishRatingFields:
+//  - the hint beside "What did you have?" is always "Optional", never "A signature dish earns +2" (solo has no points);
+//  - the typed-dish placeholder is "What was it called?", not the group app's "e.g. Sticky rice with jeow bong".
 import { useId, type KeyboardEvent } from "react";
 import { cn } from "@/components/ui/cn";
 import type { DishRatingValue } from "@/components/checkin/DishRatingFields";

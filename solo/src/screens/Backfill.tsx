@@ -136,7 +136,7 @@ export default function Backfill() {
             "relative flex h-24 w-full flex-col items-center justify-center gap-1.5 rounded-2xl px-1.5 text-center transition",
             "active:scale-95",
             on
-              ? cn("stamp-ink bg-paper-raised", isLocked ? "text-verified-teal" : style.ink)
+              ? cn("stamp-ink bg-paper-raised", isLocked ? "text-ink-soft" : style.ink)
               : "border border-line bg-paper-raised text-ink-soft hover:border-ink/40",
             fresh === c.iso2 && on && "animate-stamp-in",
           )}

@@ -448,9 +448,11 @@ test.describe("world", () => {
 
 // Every screen, as a phone shows it. Each test opens one at 390x844 from a populated passport, and a
 // failure here is a blank, overflowing or erroring screen (the suite's fixtures fail any console error).
-// The pictures go to docs/screens/solo/ so a person can read them against docs/design.md.
+// The pictures go to docs/screens/solo/ so a person can read them against docs/design.md, but only when
+// SOLO_SCREENS=1 (`npm run solo:screens`): an ordinary run must not rewrite files that are committed.
 test.describe("every screen on a phone", () => {
   const SHOTS = path.resolve(__dirname, "../../docs/screens/solo");
+  const WRITE_SHOTS = process.env.SOLO_SCREENS === "1";
   /** The day the pictures are taken on, so the dates and the 30-day backup reminder do not drift. */
   const TODAY = new Date("2026-10-22T10:00:00");
 
@@ -494,8 +496,9 @@ test.describe("every screen on a phone", () => {
     // A screen that is wider than the phone is a broken screen, even if nothing errors.
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow, `${name} is wider than the screen`).toBeLessThanOrEqual(0);
-    mkdirSync(SHOTS, { recursive: true });
-    await page.screenshot({ path: path.join(SHOTS, `${name}.png`), scale: "css", animations: "disabled" });
+    // The picture is always taken, so a screen that cannot be captured still fails the run; it is only saved on request.
+    if (WRITE_SHOTS) mkdirSync(SHOTS, { recursive: true });
+    await page.screenshot({ path: WRITE_SHOTS ? path.join(SHOTS, `${name}.png`) : undefined, scale: "css", animations: "disabled" });
   };
 
   /** Opens `hash` with the gallery passport in the phone, on the day the pictures are taken. */
