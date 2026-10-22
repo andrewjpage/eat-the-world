@@ -243,6 +243,32 @@ test.describe("export and import", () => {
     expect(await rows(page, "backfills")).toHaveLength(2);
   });
 
+  test("the same backup imported twice adds nothing the second time", async ({ page }, testInfo) => {
+    await noShareSheet(page);
+    await open(page, "/settings", PASSPORT);
+    const saved = await exportBackup(page, testInfo);
+
+    // A phone with nothing on it takes the whole file.
+    await injectData(page, { restaurants: [], visits: [], backfills: [] });
+    await page.reload();
+    const sheet = page.getByRole("dialog", { name: "Import this backup" });
+    await page.getByLabel("Backup file").setInputFiles(saved.path);
+    await expect(sheet).toContainText("3 new visits");
+    await sheet.getByRole("button", { name: "Merge" }).click();
+    await expect(toast(page, "Added what was new.")).toBeVisible();
+    expect(await rows(page, "visits")).toHaveLength(3);
+
+    // The same file again has nothing to offer, and the phone is exactly as it was.
+    const before = JSON.stringify([await rows(page, "restaurants"), await rows(page, "visits"), await rows(page, "backfills")]);
+    await page.getByLabel("Backup file").setInputFiles(saved.path);
+    await expect(sheet).toContainText("0 new visits");
+    // Everything in the file is here already: 3 visits, 2 restaurants and 2 countries from before the app.
+    await expect(sheet).toContainText("7 already on this phone");
+    await expect(sheet).toContainText("Nothing new: everything in this file is already here.");
+    await expect(sheet.getByRole("button", { name: "Merge" })).toBeDisabled();
+    expect(JSON.stringify([await rows(page, "restaurants"), await rows(page, "visits"), await rows(page, "backfills")])).toBe(before);
+  });
+
   test("a file that is not a usable backup is refused, with the passport untouched", async ({ page }) => {
     await open(page, "/settings", PASSPORT);
     const spoiled = (over: Record<string, unknown>) =>
