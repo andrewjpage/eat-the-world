@@ -13,6 +13,9 @@ export default defineConfig({
     baseURL,
     ...devices["Pixel 7"],
     viewport: { width: 390, height: 844 },
+    // The offline app registers a service worker, which would answer requests before `page.route` sees
+    // them (the OpenStreetMap tile stub). Only offline.spec.ts and update.spec.ts switch it back on.
+    serviceWorkers: "block",
     trace: "retain-on-failure",
   },
   projects: [{ name: "phone", use: { browserName: "chromium" } }],

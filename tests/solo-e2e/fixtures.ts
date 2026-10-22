@@ -31,19 +31,24 @@ export const test = base.extend<{ ignoreErrors: RegExp | null; noPageErrors: voi
   ],
   ignoreErrors: [null, { option: true }],
   noPageErrors: [
-    async ({ context, ignoreErrors }, use) => {
+    async ({ context, ignoreErrors, serviceWorkers }, use) => {
+      // With workers blocked (the suite's default), the page's attempt to register one comes back
+      // empty-handed and the app logs that it could not start offline support, which is the point.
+      const expected = (text: string) =>
+        ignoreErrors?.test(text) || (serviceWorkers === "block" && /Eat the World: offline support/.test(text));
       const errors: string[] = [];
       const watch = (page: Page) => {
         page.on("pageerror", (error) => errors.push(`${error.name}: ${error.message}`));
+        // Chrome's "Failed to load resource" does not name the resource, so the address is added for `ignoreErrors` to match.
         page.on("console", (message) => {
-          if (message.type() === "error") errors.push(message.text());
+          if (message.type() === "error") errors.push(`${message.text()} (${message.location().url})`);
         });
       };
       context.pages().forEach(watch);
       context.on("page", watch);
       await use();
       expect(
-        errors.filter((text) => !ignoreErrors?.test(text)),
+        errors.filter((text) => !expected(text)),
         "uncaught errors and console errors",
       ).toEqual([]);
     },
