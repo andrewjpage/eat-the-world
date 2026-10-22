@@ -40,8 +40,9 @@ If the repository stays private, use Cloudflare Pages instead: connect the repos
 ## Installing on Android
 
 1. On Wi-Fi, open the address in Chrome and let the passport appear. The first visit downloads about 5.6 MiB, which the service worker keeps for offline use.
-2. Chrome menu > **Add to Home screen** (or **Install app**), then open the app from its icon.
-3. Confirm offline works: switch on airplane mode, close the app, open it from the icon. The passport, the world map, countries, restaurants and a new visit all work. The London map shows its pins but no map tiles, which come from OpenStreetMap and are never stored.
+2. The app offers to install itself: a dialog on the passport asks "Install Eat the World?" as soon as Chrome says the app is installable. Tap **Install**, then open the app from its icon. **Not now** closes it and it asks again after 14 days. It never asks while the app is already running installed.
+3. Changed your mind, or missed the dialog? Settings has an **Install app** button for as long as the install is on offer (it is not shown once the app is installed). If Chrome has not offered an install at all, Chrome menu > **Add to Home screen** (or **Install app**) still works.
+4. Confirm offline works: switch on airplane mode, close the app, open it from the icon. The passport, the world map, countries, restaurants and a new visit all work. The London map shows its pins but no map tiles, which come from OpenStreetMap and are never stored.
 
 An update installs itself: the next time the app is opened with a connection, the new files replace the old ones and the visits are untouched.
 
@@ -58,6 +59,7 @@ The visits exist only in the browser's storage on that phone. Clearing Chrome's 
 
 Done by hand on a real phone, because a desktop browser cannot stand in for it:
 
+- [ ] First visit in Chrome: the "Install Eat the World?" dialog appears over the passport, with no Chrome install bar as well. **Install** puts the icon on the home screen; the installed app shows no dialog and no Install row in Settings. (The tests fake Chrome's install event, so only a phone shows that Chrome sends the real one.)
 - [ ] Airplane mode: the installed app opens and shows the passport, and a new visit saves.
 - [ ] Log a visit, swipe the app away, open it again: the visit and its stamp are still there.
 - [ ] Export a backup, open the app in a second browser profile, import it: the headline count and the stamps match.
