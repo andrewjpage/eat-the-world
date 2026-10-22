@@ -1,5 +1,9 @@
+import { mkdirSync } from "node:fs";
+import path from "node:path";
 import type { Page } from "@playwright/test";
+import sharp from "sharp";
 import seed from "../../solo/src/data/seed.json";
+import { DB_NAME } from "../../solo/src/db/schema";
 import type { Backfill, SoloRestaurant, SoloVisit } from "../../solo/src/domain/types";
 import { expect, injectData, test } from "./fixtures";
 
@@ -241,8 +245,9 @@ test.describe("map", () => {
     await expect(page.locator(".leaflet-marker-icon .etw-pin-stamped")).toHaveCount(0);
     await expect(page.locator(".leaflet-marker-icon .etw-ring")).toHaveCount(0);
     await expect(page.getByRole("link", { name: "OpenStreetMap" })).toBeVisible();
+    // The map asked OpenStreetMap for tiles, and only for well-formed `/{z}/{x}/{y}.png` ones.
     await expect.poll(() => tileRequests.length).toBeGreaterThan(0);
-    expect(tileRequests.every((url) => url.startsWith("https://tile.openstreetmap.org/"))).toBe(true);
+    for (const url of tileRequests) expect(url).toMatch(/^https:\/\/tile\.openstreetmap\.org\/\d+\/\d+\/\d+\.png$/);
 
     const legend = page.getByRole("group", { name: "Legend" });
     await expect(legend).toContainText("New country");
@@ -370,9 +375,10 @@ test.describe("map", () => {
       expect(stored).not.toContain(needle);
       expect(requested.filter((url) => url.includes(needle))).toEqual([]);
     }
-    // Only this app and OpenStreetMap's tiles were ever contacted.
+    // Only this app and OpenStreetMap's tiles were ever contacted (every spec also checks this, in fixtures.ts).
+    const appHost = new URL(page.url()).host;
     const hosts = new Set(requested.map((url) => new URL(url).host).filter(Boolean));
-    expect([...hosts].filter((host) => host !== "localhost:4173" && host !== "tile.openstreetmap.org")).toEqual([]);
+    expect([...hosts].filter((host) => host !== appHost && host !== "tile.openstreetmap.org")).toEqual([]);
   });
 
   test("with location refused, Nearest unstamped says what to do instead", async ({ page }) => {
@@ -437,5 +443,243 @@ test.describe("world", () => {
     await expect(page.getByRole("button", { name: "My stamps" })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "My group" })).toHaveCount(0);
     await expect(page.getByRole("group", { name: "Whose stamps" })).toBeHidden();
+  });
+});
+
+// Every screen, as a phone shows it. Each test opens one at 390x844 from a populated passport, and a
+// failure here is a blank, overflowing or erroring screen (the suite's fixtures fail any console error).
+// The pictures go to docs/screens/solo/ so a person can read them against docs/design.md.
+test.describe("every screen on a phone", () => {
+  const SHOTS = path.resolve(__dirname, "../../docs/screens/solo");
+  /** The day the pictures are taken on, so the dates and the 30-day backup reminder do not drift. */
+  const TODAY = new Date("2026-10-22T10:00:00");
+
+  const seedCopy = (id: string, seedId: string): SoloRestaurant => {
+    const s = seed.restaurants.find((r) => r.id === seedId)!;
+    return restaurant(id, s.name, s.countryIso2, { seedId, address: s.address, lat: s.lat, lon: s.lon });
+  };
+  const dishOf = (iso2: string, slug: string) => `seed:dish:${iso2}:${slug}`;
+
+  /**
+   * A passport a few weeks in. Six visit stamps: Nigeria (two places, one with no position), Ethiopia,
+   * Somalia and Mauritius from copies of London suggestions, France and Japan from places added by hand.
+   * Two countries were eaten before the app (Spain, Italy). Counted by hand: 6 / 249 countries, 4 / 39
+   * London suggestions (Nigeria, Ethiopia, Somalia, Mauritius), 8 stamps anywhere. Fewer than ten new
+   * records and none older than 30 days, so the backup reminder stays away.
+   */
+  const GALLERY = {
+    restaurants: [
+      seedCopy("r-akoko", AKOKO),
+      restaurant("r-mums", "Mum's Kitchen", "NG"),
+      seedCopy("r-zeret", ZERET),
+      seedCopy("r-sabiib", "seed:sabiib-harringay-n4-1jx"),
+      seedCopy("r-devi", "seed:devi-deluxe-n13-4sp"),
+      restaurant("r-maison", "Maison Bertaux", "FR", { address: "28 Greek St, London", lat: 51.5133, lon: -0.1318 }),
+      restaurant("r-koya", "Koya Soho", "JP", { address: "49 Frith St, London", lat: 51.5139, lon: -0.1319 }),
+    ],
+    visits: [
+      visit("v-akoko", "r-akoko", "2026-09-28", { rating: 4, dishId: dishOf("NG", "jollof-rice"), note: "First time, and the jollof was smoky" }),
+      visit("v-zeret", "r-zeret", "2026-10-01", { rating: 5, dishId: dishOf("ET", "kitfo") }),
+      visit("v-sabiib", "r-sabiib", "2026-10-05", { rating: 3, dishId: dishOf("SO", "suqaar") }),
+      visit("v-devi", "r-devi", "2026-10-08", { rating: 4, dishId: dishOf("MU", "dholl-puri") }),
+      visit("v-mums", "r-mums", "2026-10-09", { rating: 5, dishOther: "Pepper soup" }),
+      visit("v-maison", "r-maison", "2026-10-12", { dishOther: "Croque monsieur" }),
+      visit("v-koya", "r-koya", "2026-10-15", { rating: 5, dishOther: "Udon", note: "Chewy, cold, perfect" }),
+    ],
+    backfills: [backfill("ES"), backfill("IT")],
+  };
+
+  const shoot = async (page: Page, name: string) => {
+    await page.evaluate(() => document.fonts.ready);
+    // A screen that is wider than the phone is a broken screen, even if nothing errors.
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    expect(overflow, `${name} is wider than the screen`).toBeLessThanOrEqual(0);
+    mkdirSync(SHOTS, { recursive: true });
+    await page.screenshot({ path: path.join(SHOTS, `${name}.png`), scale: "css", animations: "disabled" });
+  };
+
+  /** Opens `hash` with the gallery passport in the phone, on the day the pictures are taken. */
+  const show = async (page: Page, hash: string, data: Parameters<typeof injectData>[1] = GALLERY) => {
+    await page.clock.setFixedTime(TODAY);
+    await open(page, hash, data);
+  };
+
+  test("the passport, blank and with six stamps, and the numbers are the ones in the data", async ({ page }) => {
+    await page.clock.setFixedTime(TODAY);
+    await page.goto("./");
+    await expect(page.getByRole("heading", { name: "Your passport is blank" })).toBeVisible();
+    await shoot(page, "passport-blank");
+
+    await show(page, "/");
+    // The headline, counted from the rows in the browser's own database by plain loops, not by the app.
+    const rows = await page.evaluate(
+      (dbName) =>
+        new Promise<{ restaurants: SoloRestaurant[]; visits: SoloVisit[]; backfills: Backfill[] }>((resolve, reject) => {
+          const opening = indexedDB.open(dbName);
+          opening.onerror = () => reject(opening.error);
+          opening.onsuccess = () => {
+            const db = opening.result;
+            const out: Record<string, unknown[]> = {};
+            const tx = db.transaction(["restaurants", "visits", "backfills"]);
+            for (const store of ["restaurants", "visits", "backfills"]) {
+              tx.objectStore(store).getAll().onsuccess = (e) => (out[store] = (e.target as IDBRequest).result);
+            }
+            tx.oncomplete = () => (db.close(), resolve(out as never));
+          };
+        }),
+      DB_NAME,
+    );
+    const visited = new Set<string>();
+    for (const v of rows.visits) for (const r of rows.restaurants) if (r.id === v.restaurantId) visited.add(r.countryIso2);
+    const londonCountries = new Set<string>();
+    for (const r of seed.restaurants) londonCountries.add(r.countryIso2);
+    let london = 0;
+    for (const iso2 of visited) if (londonCountries.has(iso2)) london++;
+    const anywhere = new Set([...visited, ...rows.backfills.map((b) => b.countryIso2)]);
+    // The same numbers, written down from reading the fixture above.
+    expect([visited.size, london, anywhere.size, londonCountries.size, seed.countries.length]).toEqual([6, 4, 8, 39, 249]);
+
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(`${visited.size} / ${seed.countries.length} countries`);
+    await expect(page.getByRole("progressbar", { name: `${london} / ${londonCountries.size} London suggestions` })).toBeVisible();
+    await expect(page.getByText("stamps anywhere")).toContainText(String(anywhere.size));
+    await expect(page.getByRole("region", { name: "Your stamps" }).getByRole("img")).toHaveCount(anywhere.size);
+    await expect(page.getByRole("note", { name: "Backup reminder" })).toHaveCount(0);
+    await shoot(page, "passport");
+
+    // Further down, where the region grid marks the stamped, remembered and London-listed countries.
+    await page.getByRole("link", { name: "Stamped", exact: true }).click();
+    await expect(page.getByRole("img", { name: /stamped|before the app/ })).toHaveCount(anywhere.size);
+    await shoot(page, "passport-stamped-filter");
+  });
+
+  test("the backup reminder, once ten things are unsaved", async ({ page }) => {
+    const extra = ["2026-10-16", "2026-10-17", "2026-10-18"].map((day, i) => visit(`v-more-${i}`, "r-akoko", day, { rating: 4 }));
+    await show(page, "/", { ...GALLERY, visits: [...GALLERY.visits, ...extra] });
+
+    await expect(page.getByRole("note", { name: "Backup reminder" })).toBeVisible();
+    await shoot(page, "passport-backup-reminder");
+  });
+
+  test("backfill", async ({ page }) => {
+    await show(page, "/backfill");
+    await expect(page.getByRole("region", { name: "Popular" })).toBeVisible();
+    await shoot(page, "backfill");
+  });
+
+  test("a country with a stamp, and one with London picks and nothing yet", async ({ page }) => {
+    await show(page, "/country/NG");
+    await expect(page.getByRole("heading", { level: 1, name: "Nigeria" })).toBeVisible();
+    await shoot(page, "country-stamped");
+
+    await show(page, "/country/ER");
+    await expect(page.getByRole("heading", { level: 1, name: "Eritrea" })).toBeVisible();
+    await shoot(page, "country-unvisited");
+  });
+
+  test("a restaurant I have been to, one I have not, and one I added with no position", async ({ page }) => {
+    await show(page, "/restaurant/r-akoko");
+    await expect(page.getByRole("heading", { level: 1, name: "Akoko" })).toBeVisible();
+    await shoot(page, "restaurant-visited");
+
+    await show(page, "/restaurant/seed:mosob-w9-3rb");
+    await expect(page.getByRole("heading", { level: 1, name: "Mosob" })).toBeVisible();
+    await shoot(page, "restaurant-unvisited");
+
+    await show(page, "/restaurant/r-mums");
+    await expect(page.getByRole("heading", { level: 1, name: "Mum's Kitchen" })).toBeVisible();
+    await shoot(page, "restaurant-added-by-hand");
+  });
+
+  test("the map, and a pin's card", async ({ page }) => {
+    await show(page, "/map");
+    // The 68 suggestions, with my copies of four replacing theirs, plus the two places I added with a position.
+    await expect(page.locator(".leaflet-marker-icon")).toHaveCount(seed.restaurants.length + 2);
+    await shoot(page, "map");
+
+    await page.locator('.leaflet-marker-icon[title="Zeret Kitchen (Ethiopia)"]').dispatchEvent("click");
+    await expect(page.getByRole("region", { name: "Zeret Kitchen, Ethiopia" })).toBeVisible();
+    await shoot(page, "map-card");
+  });
+
+  test("the world", async ({ page }) => {
+    await show(page, "/world");
+    await expect(page.locator('[role="application"][data-dots]')).toBeAttached();
+    await expect(page.getByRole("region", { name: "Stamped" })).toBeVisible();
+    await shoot(page, "world");
+  });
+
+  test("checking in: the list, a new place, the details, the stamp and the visit", async ({ page }) => {
+    await show(page, "/check-in");
+    await expect(page.getByRole("heading", { name: "Where did you eat?" })).toBeVisible();
+    await shoot(page, "check-in-list");
+
+    await page.getByRole("button", { name: "Add a place" }).click();
+    await page.getByLabel("Name of the place").fill("Kiln");
+    await page.getByRole("radio", { name: "Thailand" }).click();
+    await shoot(page, "check-in-new-place");
+
+    // The details of a suggestion, with a rating and a photo filled in.
+    await page.goto("./#/check-in?restaurant=seed:mosob-w9-3rb");
+    await expect(page.getByRole("heading", { name: "How was it?" })).toBeVisible();
+    const plate = await sharp({ create: { width: 900, height: 675, channels: 3, background: "#b5835a" } }).jpeg().toBuffer();
+    await page.getByTestId("photo-input").setInputFiles({ name: "plate.jpg", mimeType: "image/jpeg", buffer: plate });
+    await expect(page.getByText("Photo ready")).toBeVisible();
+    await page.getByRole("radio", { name: "4 stars" }).click();
+    await shoot(page, "check-in-details");
+
+    await page.getByRole("button", { name: "Save visit" }).click();
+    await expect(page.getByRole("heading", { name: "Eritrea, stamped!" })).toBeVisible();
+    await shoot(page, "stamp-moment");
+
+    await page.getByRole("button", { name: "View this visit" }).click();
+    await expect(page.getByRole("img", { name: /^The meal at / })).toBeVisible();
+    await shoot(page, "visit");
+
+    await page.getByRole("button", { name: "Edit visit" }).click();
+    await expect(page.getByRole("button", { name: "Save changes" })).toBeVisible();
+    await shoot(page, "visit-edit");
+  });
+
+  test("settings, and the import sheet", async ({ page }, testInfo) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, "canShare", { value: () => false, configurable: true });
+    });
+    await show(page, "/settings");
+    await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
+    await shoot(page, "settings");
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    await shoot(page, "settings-about");
+    await page.evaluate(() => window.scrollTo(0, 0));
+
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByRole("button", { name: "Export backup" }).click(),
+    ]);
+    const saved = testInfo.outputPath(download.suggestedFilename());
+    await download.saveAs(saved);
+    await page.getByLabel("Backup file").setInputFiles(saved);
+    await expect(page.getByRole("dialog", { name: "Import this backup" })).toBeVisible();
+    await shoot(page, "settings-import");
+  });
+
+  test("a route that is nothing", async ({ page }) => {
+    await page.goto("./#/nope");
+    await expect(page.getByRole("heading", { name: "Nothing here" })).toBeVisible();
+    await shoot(page, "not-found");
+  });
+
+  test.describe("a window that cannot store anything", () => {
+    test.use({ ignoreErrors: /Eat the World: storage/ });
+
+    test("says so, instead of opening a blank app", async ({ page }) => {
+      await page.addInitScript(() => {
+        indexedDB.open = () => {
+          throw new DOMException("The operation is insecure.", "SecurityError");
+        };
+      });
+      await page.goto("./");
+      await expect(page.getByRole("heading", { name: "Storage is unavailable in this window" })).toBeVisible();
+      await shoot(page, "storage-unavailable");
+    });
   });
 });

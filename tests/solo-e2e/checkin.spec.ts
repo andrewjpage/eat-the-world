@@ -478,6 +478,30 @@ test.describe("photos", () => {
     expect(await records<SoloVisit>(page, "visits")).toHaveLength(1);
   });
 
+  test("a photo the phone has no room for is a toast, and the visit still saves without it", async ({ page }) => {
+    // What a full phone does: the browser refuses the write to the photos store, and only that one.
+    await page.addInitScript(() => {
+      const put = IDBObjectStore.prototype.put;
+      IDBObjectStore.prototype.put = function (...args: Parameters<IDBObjectStore["put"]>) {
+        if (this.name === "photos") throw new DOMException("The quota has been exceeded.", "QuotaExceededError");
+        return put.apply(this, args);
+      };
+    });
+    await page.goto("./#/check-in?restaurant=" + AKOKO);
+    await page.getByTestId("photo-input").setInputFiles({ name: "plate.png", mimeType: "image/png", buffer: PNG });
+    await expect(page.getByText("Photo ready")).toBeVisible();
+
+    await page.getByRole("button", { name: "Save visit" }).click();
+
+    await expect(alertToast(page, "Visit saved, but the photo wouldn't fit on this phone")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Nigeria, stamped!" })).toBeVisible();
+    expect(await photoCount(page)).toBe(0);
+    const [saved] = await records<SoloVisit>(page, "visits");
+    expect(saved.photoId).toBeNull();
+    await page.getByRole("button", { name: "Done" }).click();
+    await expect(headline(page)).toHaveText("1 / 249 countries");
+  });
+
   test("a photo can be taken back out before saving", async ({ page }) => {
     await page.goto("./#/check-in?restaurant=" + AKOKO);
     await page.getByTestId("photo-input").setInputFiles({ name: "plate.png", mimeType: "image/png", buffer: PNG });
