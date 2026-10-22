@@ -331,6 +331,38 @@ test.describe("adding a place that is not on the list", () => {
     ]);
   });
 
+  test("if the visit does not save, trying again reuses the place that was written instead of adding it twice", async ({ page }) => {
+    // The browser refuses the first write to the visits store; the restaurant went in just before it.
+    await page.addInitScript(() => {
+      const put = IDBObjectStore.prototype.put;
+      let refused = false;
+      IDBObjectStore.prototype.put = function (...args: Parameters<IDBObjectStore["put"]>) {
+        if (this.name === "visits" && !refused) {
+          refused = true;
+          throw new DOMException("The quota has been exceeded.", "QuotaExceededError");
+        }
+        return put.apply(this, args);
+      };
+    });
+    await page.goto("./#/check-in");
+    await page.getByRole("button", { name: "Add a place" }).click();
+    await page.getByLabel("Name of the place").fill("Bar Tomás");
+    await page.getByRole("radio", { name: "Spain" }).click();
+    await page.getByRole("button", { name: "Next" }).click();
+
+    await page.getByRole("button", { name: "Save visit" }).click();
+    await expect(alertToast(page, "Couldn't save the visit. Try again.")).toBeVisible();
+    expect(await records<SoloVisit>(page, "visits")).toEqual([]);
+    expect(await records<SoloRestaurant>(page, "restaurants")).toHaveLength(1);
+
+    await page.getByRole("button", { name: "Save visit" }).click();
+    await expect(page.getByRole("heading", { name: "Spain, stamped!" })).toBeVisible();
+
+    const places = await records<SoloRestaurant>(page, "restaurants");
+    expect(places.map((r) => r.name)).toEqual(["Bar Tomás"]);
+    expect(await records<SoloVisit>(page, "visits")).toEqual([expect.objectContaining({ restaurantId: places[0].id })]);
+  });
+
   test("starts from what was typed in the search, and from the country in the link", async ({ page }) => {
     await page.goto("./#/check-in?country=TR");
     await page.getByLabel("Search places").fill("Kebab Corner");

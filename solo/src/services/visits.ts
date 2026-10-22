@@ -37,6 +37,21 @@ export class VisitError extends Error {
   }
 }
 
+/**
+ * The visit itself could not be written (the place, if it was new, already had been). `restaurantId` is
+ * that place, which is now on the device: retry with `{ existingId: restaurantId }` so a place added by
+ * hand is not added a second time. The message is the storage layer's, not for the screen.
+ */
+export class VisitSaveError extends Error {
+  constructor(
+    readonly restaurantId: string,
+    cause: unknown,
+  ) {
+    super(cause instanceof Error ? cause.message : String(cause), { cause });
+    this.name = "VisitSaveError";
+  }
+}
+
 const NO_RESTAURANT = "We couldn't find that restaurant.";
 const NO_VISIT = "We couldn't find that visit.";
 const NO_NAME = "Give the place a name.";
@@ -156,7 +171,8 @@ function resolveRestaurant(
 /**
  * Saves one visit. Everything is checked before anything is written. Writes go restaurant, then
  * photo, then visit last, so a failure part-way leaves at worst an unused restaurant, never a lost
- * visit. A photo that cannot be stored (a full phone) does not stop the visit: `photoSaved` says so.
+ * visit; if the visit is what fails, the `VisitSaveError` names that restaurant for the retry. A photo
+ * that cannot be stored (a full phone) does not stop the visit: `photoSaved` says so.
  *
  * `data` is what is on the device now, from which the stamp outcome and the restaurant copy are
  * worked out, so read it fresh just before calling.
@@ -203,7 +219,7 @@ export async function logVisit(
     await store.putVisit(visit);
   } catch (error) {
     if (photoId) await store.deletePhoto(photoId).catch(() => {});
-    throw error;
+    throw new VisitSaveError(restaurant.id, error);
   }
   return { visit, restaurant, outcome, photoSaved: photoId !== null };
 }
@@ -221,7 +237,11 @@ export async function updateVisit(
   if (!visit) throw new VisitError(NO_VISIT);
 
   const next: SoloVisit = { ...visit };
-  if (patch.visitedOn !== undefined) next.visitedOn = checkDate(patch.visitedOn, new Date());
+  // The edit page sends the date back whether or not it changed. A visit logged in a time zone ahead of
+  // home can already be dated tomorrow, so only a new date is checked.
+  if (patch.visitedOn !== undefined && patch.visitedOn !== visit.visitedOn) {
+    next.visitedOn = checkDate(patch.visitedOn, new Date());
+  }
   if (patch.rating !== undefined) next.rating = checkRating(patch.rating);
   if (patch.note !== undefined) next.note = cleanNote(patch.note);
   if (patch.dishId !== undefined) next.dishId = patch.dishId;

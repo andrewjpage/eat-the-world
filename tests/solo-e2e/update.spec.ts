@@ -26,7 +26,7 @@ const TYPES: Record<string, string> = {
 
 let builds: string;
 let live: string;
-let server: Server;
+let server: Server | undefined;
 
 /** The production build, with `marker` shown on the page, written to `<builds>/<marker>`. */
 function build(marker: string): string {
@@ -71,8 +71,13 @@ test.beforeAll(async () => {
 });
 
 test.afterAll(async () => {
-  await new Promise((resolve) => server.close(resolve));
-  rmSync(builds, { recursive: true, force: true });
+  // If beforeAll failed, the server (or the folder) may not exist. Say nothing about that here: the
+  // failure to report is beforeAll's, and the temp folder is removed either way.
+  try {
+    await new Promise((resolve) => (server ? server.close(resolve) : resolve(undefined)));
+  } finally {
+    if (builds) rmSync(builds, { recursive: true, force: true });
+  }
 });
 
 test("an open, installed page takes a new release at its next move, and keeps what it saved", async ({ page, context }) => {

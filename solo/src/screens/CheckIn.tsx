@@ -17,7 +17,7 @@ import { buildCandidates, type Candidate } from "@solo/domain/candidates";
 import { visitFieldsOf } from "@solo/domain/draft";
 import { resolvePlace } from "@solo/domain/lookup";
 import { deriveStamps, localToday } from "@solo/domain/stamps";
-import { logVisit, VisitError, type LogResult, type NewVisitInput } from "@solo/services/visits";
+import { logVisit, VisitError, VisitSaveError, type LogResult, type NewVisitInput } from "@solo/services/visits";
 import { useRouter, useSearchParams } from "@solo/shims/navigation";
 import { useSolo } from "@solo/state/SoloContext";
 
@@ -136,6 +136,12 @@ function CheckInFlow({ restaurantId, countryIso2 }: { restaurantId: string | nul
       setSaved({ result, earnedOn: stamp?.earnedOn ?? result.visit.visitedOn });
       await reload().catch(() => {}); // the window also reads again whenever it regains focus
     } catch (error) {
+      // The place was saved before the visit failed. Retry against that record, or a place added by
+      // hand would be added again, as a second restaurant with the same name.
+      if (error instanceof VisitSaveError) {
+        const existingId = error.restaurantId;
+        setChosen((c) => c && { ...c, ref: { existingId } });
+      }
       toast(error instanceof VisitError ? error.message : "Couldn't save the visit. Try again.", "error");
       saveStarted.current = false;
     } finally {

@@ -3,7 +3,7 @@ import { IDBFactory } from "fake-indexeddb";
 import { describe, expect, it } from "vitest";
 import { MAX_DISH_OTHER, MAX_NOTE } from "@/components/checkin/logic";
 import { openSoloStore, type SoloStore } from "@solo/db/store";
-import { deriveStamps } from "@solo/domain/stamps";
+import { deriveStamps, localToday } from "@solo/domain/stamps";
 import type { NewVisitInput } from "@solo/services/visits";
 import {
   logVisit,
@@ -13,7 +13,7 @@ import {
   updateVisit,
   VisitError,
 } from "@solo/services/visits";
-import type { SeedData } from "@solo/domain/types";
+import type { SeedData, SoloVisit } from "@solo/domain/types";
 
 const seed: SeedData = {
   generatedAt: "2026-10-01T00:00:00Z",
@@ -240,6 +240,39 @@ describe("logVisit: what it saves", () => {
     expect((await store.allPhotos()).size).toBe(0);
   });
 
+  it("names the saved place when the visit cannot be stored, so a retry does not add the place twice", async () => {
+    const store = await freshStore();
+    let failures = 1;
+    const flaky: SoloStore = {
+      ...store,
+      putVisit: (v) => (failures-- > 0 ? Promise.reject(new Error("disk full")) : store.putVisit(v)),
+    };
+
+    const failure = await logVisit(flaky, await store.load(), seed, input({ restaurant: SOHO_CAFE }), NOW).then(
+      () => null,
+      (error: unknown) => error,
+    );
+
+    // The place was written before the visit failed, and the error says which one it is.
+    const [written] = (await store.load()).restaurants;
+    expect(written.name).toBe("Soho Cafe");
+    expect(failure).toMatchObject({ restaurantId: written.id, message: "disk full" });
+
+    // The retry the check-in screen makes: against the place that is already saved, with fresh data.
+    const retry = await logVisit(
+      flaky,
+      await store.load(),
+      seed,
+      input({ restaurant: { existingId: (failure as { restaurantId: string }).restaurantId } }),
+      NOW,
+    );
+
+    const data = await store.load();
+    expect(data.restaurants.filter((r) => r.name === "Soho Cafe")).toHaveLength(1);
+    expect(data.visits).toEqual([retry.visit]);
+    expect(retry.restaurant.id).toBe(written.id);
+  });
+
   it("does not leave the photo behind when the visit itself cannot be stored", async () => {
     const store = await freshStore();
     const failing: SoloStore = { ...store, putVisit: () => Promise.reject(new Error("disk full")) };
@@ -355,6 +388,50 @@ describe("updateVisit", () => {
   it("refuses an unknown visit", async () => {
     const store = await freshStore();
     await expect(updateVisit(store, "nope", { rating: 5 })).rejects.toBeInstanceOf(VisitError);
+  });
+
+  describe("a visit dated tomorrow (logged in a time zone ahead of home)", () => {
+    /** YYYY-MM-DD, `days` from the device's today. The service reads the real clock here, so this does too. */
+    function fromToday(days: number): string {
+      const at = new Date();
+      at.setDate(at.getDate() + days);
+      return localToday(at);
+    }
+
+    async function storeWithTomorrowsVisit() {
+      const store = await freshStore();
+      const { visit } = await log(store, { rating: 4 });
+      // The service refuses a future date, so a visit that is already one is written straight in.
+      const ahead: SoloVisit = { ...visit, visitedOn: fromToday(1) };
+      await store.putVisit(ahead);
+      return { store, ahead };
+    }
+
+    it("can have its note changed when the page sends the date back unchanged", async () => {
+      const { store, ahead } = await storeWithTomorrowsVisit();
+
+      await updateVisit(store, ahead.id, { visitedOn: ahead.visitedOn, note: "Worth the queue" });
+
+      expect((await store.load()).visits[0]).toEqual({ ...ahead, note: "Worth the queue" });
+    });
+
+    it("still refuses a change of date to another future date", async () => {
+      const { store, ahead } = await storeWithTomorrowsVisit();
+
+      await expect(updateVisit(store, ahead.id, { visitedOn: fromToday(2), note: "x" })).rejects.toThrow(
+        "That date is in the future",
+      );
+
+      expect((await store.load()).visits).toEqual([ahead]);
+    });
+
+    it("can be moved to a valid date", async () => {
+      const { store, ahead } = await storeWithTomorrowsVisit();
+
+      await updateVisit(store, ahead.id, { visitedOn: fromToday(0) });
+
+      expect((await store.load()).visits[0].visitedOn).toBe(fromToday(0));
+    });
   });
 
   it("adds a photo to a visit that had none", async () => {
