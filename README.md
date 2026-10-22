@@ -5,6 +5,7 @@ A private, friends-only game: eat at a restaurant that specialises in each count
 - `eat-the-world-london-brief.md`: the build brief (the spec).
 - `docs/architecture.md`: the binding contract (tables, functions, routes). `docs/design.md`: the design system.
 - `docs/deploy.md`: the one-time account checklist and first deploy.
+- `docs/solo.md`: Solo, the offline one-person build in `solo/` (commands, GitHub Pages setup, installing on Android).
 - `seed/`: the fact-checked London restaurants, sets, signature dishes and the ISO country list. `docs/fact-check-2026-10-05.md` has the evidence.
 
 ## Local quickstart

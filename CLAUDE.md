@@ -8,5 +8,6 @@ A personal, non-commercial game for a group of friends. Not an Origin Sciences p
 - Hosting: Vercel Hobby + Supabase Free. Ask before adding anything that costs money.
 - When fun and rigour conflict, pick fun. The privacy and RLS rules in the brief stay hard requirements.
 - Architecture contract (tables, Postgres functions, routes): `docs/architecture.md`.
+- Solo (offline one-person build in `solo/`, on GitHub Pages, no Supabase): `docs/solo.md`.
 
 @AGENTS.md

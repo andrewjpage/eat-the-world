@@ -19,3 +19,7 @@ playwright/.cache/
 
 # per-agent dev build folders
 /.next-*/
+
+# solo build output
+/solo/dist/
+/solo/dev-dist/
