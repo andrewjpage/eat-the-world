@@ -7,6 +7,7 @@ import { FlagGrid, parseFilter } from "@/components/passport/FlagGrid";
 import { Stamp } from "@/components/ui/Stamp";
 import type { PassportCountry } from "@/lib/passport";
 import { BackupNudge } from "@solo/components/BackupNudge";
+import { InstallPrompt } from "@solo/components/InstallPrompt";
 import { listedCountries } from "@solo/data/seed";
 import { stampStrip } from "@solo/domain/strip";
 import { buildPassport } from "@solo/domain/views";
@@ -126,6 +127,7 @@ export default function Passport() {
         countryTotal={summary.isoTotal}
       />
       <BackupNudge />
+      <InstallPrompt />
       {summary.anywhereStamps === 0 && (
         <Card tone="sunk" className="mb-4 text-center">
           <h2 className="font-display text-xl text-ink">Your passport is blank</h2>
