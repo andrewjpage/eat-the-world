@@ -6,6 +6,7 @@ import {
   DB_VERSION,
   DEFAULT_SETTINGS,
   SETTINGS_KEY,
+  STORE_NAMES,
   type SoloData,
   type SoloSchema,
   type SoloSettings,
@@ -61,7 +62,7 @@ function openDatabase(factory: IDBFactory, name: string): Promise<Db> {
     };
 
     const request = factory.open(name, DB_VERSION);
-    request.onupgradeneeded = () => createSchema(request.result);
+    request.onupgradeneeded = (event) => createSchema(request.result, event.oldVersion);
     request.onblocked = () => fail(new Error("Opening the database is blocked by another window."));
     request.onerror = () => fail(request.error);
     request.onsuccess = () => {
@@ -71,6 +72,12 @@ function openDatabase(factory: IDBFactory, name: string): Promise<Db> {
         return;
       }
       settled = true;
+      // Another window wants a newer version (this one is the old build). Closing lets that upgrade
+      // proceed rather than wait forever; this window's code is stale anyway, so it starts over.
+      request.result.onversionchange = () => {
+        request.result.close();
+        globalThis.location?.reload?.();
+      };
       resolve(wrap(request.result) as unknown as Db);
     };
   });
@@ -103,7 +110,7 @@ async function inTransaction<N extends StoreName[], M extends IDBTransactionMode
   }
 }
 
-const ALL_STORES: StoreName[] = ["restaurants", "visits", "backfills", "photos", "settings"];
+const ALL_STORES: StoreName[] = [...STORE_NAMES];
 
 function createStore(db: Db): SoloStore {
   return {

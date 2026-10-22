@@ -16,8 +16,6 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 # One deploy at a time; a newer push waits for the one in flight rather than cancelling it half-published.
 concurrency:
@@ -45,6 +43,10 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # Only this job may publish: the build job runs npm lifecycle scripts, so it gets no token to do so.
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

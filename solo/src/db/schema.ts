@@ -35,11 +35,17 @@ export interface SoloSchema extends DBSchema {
   settings: { key: string; value: SoloSettings };
 }
 
-/** Creates the version 1 stores. Runs inside the open request's upgrade transaction. */
-export function createSchema(db: IDBDatabase): void {
-  db.createObjectStore("restaurants", { keyPath: "id" });
-  db.createObjectStore("visits", { keyPath: "id" });
-  db.createObjectStore("backfills", { keyPath: "countryIso2" });
-  db.createObjectStore("photos");
-  db.createObjectStore("settings");
+/**
+ * Brings the stores up to `DB_VERSION`, starting from `oldVersion` (0 for a new database). Runs inside
+ * the open request's upgrade transaction. Each step makes only what its version added, so a store that
+ * is already there is never created twice: a later version adds its own `if (oldVersion < N)` block.
+ */
+export function createSchema(db: IDBDatabase, oldVersion: number): void {
+  if (oldVersion < 1) {
+    db.createObjectStore("restaurants", { keyPath: "id" });
+    db.createObjectStore("visits", { keyPath: "id" });
+    db.createObjectStore("backfills", { keyPath: "countryIso2" });
+    db.createObjectStore("photos");
+    db.createObjectStore("settings");
+  }
 }

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { applyImport } from "@solo/backup/apply";
 import { summariseImport, type BackupFile } from "@solo/backup/format";
+import { requestPersistence } from "@solo/db/persist";
 import { useSolo } from "@solo/state/SoloContext";
 import { formatDay, plural } from "./text";
 
@@ -36,6 +37,8 @@ export function ImportSheet({ backup, onClose }: { backup: BackupFile; onClose: 
     setFailed(false);
     try {
       await applyImport(store, backup, mode);
+      // A phone restored from a backup has not logged a visit here yet, so nothing else would ask.
+      void requestPersistence();
       await reload();
       toast(mode === "merge" ? "Added what was new." : "Backup restored.", "success");
       onClose();

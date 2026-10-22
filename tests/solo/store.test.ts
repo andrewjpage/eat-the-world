@@ -2,7 +2,7 @@ import "fake-indexeddb/auto";
 import { IDBFactory } from "fake-indexeddb";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { requestPersistence } from "@solo/db/persist";
-import { DB_NAME, DEFAULT_SETTINGS, type SoloData } from "@solo/db/schema";
+import { createSchema, DB_NAME, DEFAULT_SETTINGS, STORE_NAMES, type SoloData } from "@solo/db/schema";
 import { openSoloStore, StoreUnavailableError, type SoloStore } from "@solo/db/store";
 import type { Backfill, SoloRestaurant, SoloVisit } from "@solo/domain/types";
 
@@ -378,6 +378,66 @@ describe("openSoloStore", () => {
     request.result = lateConnection;
     (request.onsuccess as () => void)();
     expect(lateConnection.close).toHaveBeenCalledOnce();
+  });
+});
+
+describe("a database upgrade", () => {
+  /** Opens `name` at `version` the way a newer build would; resolves once the upgrade has finished. */
+  function openAt(factory: IDBFactory, version: number, upgrade: (db: IDBDatabase, oldVersion: number) => void) {
+    return new Promise<IDBDatabase>((resolve, reject) => {
+      const request = factory.open(DB_NAME, version);
+      request.onupgradeneeded = (event) => upgrade(request.result, event.oldVersion);
+      request.onblocked = () => reject(new Error("the upgrade was blocked by an open connection"));
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result);
+    });
+  }
+
+  it("is not blocked by a window still running the old build, which closes and starts over", async () => {
+    const reload = vi.fn();
+    vi.stubGlobal("location", { reload });
+    const { factory, store } = await freshStore();
+    await seedStore(store);
+
+    // A newer build opens version 2 while the first window still holds its version 1 connection.
+    const upgraded = await openAt(factory, 2, (db, oldVersion) => createSchema(db, oldVersion));
+    upgraded.close();
+
+    expect(reload).toHaveBeenCalledOnce();
+    // The old window's connection was closed for it: it can no longer read, and does not hold the upgrade up.
+    await expect(store.load()).rejects.toThrow();
+  });
+
+  it("closes the old connection even where there is no page to reload", async () => {
+    vi.stubGlobal("location", undefined);
+    const { factory, store } = await freshStore();
+
+    const upgraded = await openAt(factory, 2, (db, oldVersion) => createSchema(db, oldVersion));
+    upgraded.close();
+
+    await expect(store.load()).rejects.toThrow();
+  });
+
+  it("creates every store in a new database", async () => {
+    const db = await openAt(new IDBFactory(), 1, (db, oldVersion) => createSchema(db, oldVersion));
+    expect([...db.objectStoreNames].sort()).toEqual([...STORE_NAMES].sort());
+    db.close();
+  });
+
+  it("keeps existing data, and does not create a store twice, when upgrading from version 1", async () => {
+    const factory = new IDBFactory();
+    const { store } = await freshStore(factory);
+    await seedStore(store);
+
+    const upgraded = await openAt(factory, 2, (db, oldVersion) => createSchema(db, oldVersion));
+    const restaurants = await new Promise<unknown[]>((resolve, reject) => {
+      const all = upgraded.transaction("restaurants").objectStore("restaurants").getAll();
+      all.onsuccess = () => resolve(all.result);
+      all.onerror = () => reject(all.error);
+    });
+    upgraded.close();
+
+    expect(restaurants).toEqual([restaurant("r1")]);
   });
 });
 

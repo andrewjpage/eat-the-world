@@ -269,6 +269,45 @@ test.describe("export and import", () => {
     expect(JSON.stringify([await rows(page, "restaurants"), await rows(page, "visits"), await rows(page, "backfills")])).toBe(before);
   });
 
+  test("asks the browser to protect the data after an import (a restored phone is the case backups are for), not after a refused file", async ({
+    page,
+  }, testInfo) => {
+    await noShareSheet(page);
+    await page.addInitScript(() => {
+      const w = window as unknown as { __persistCalls: number };
+      w.__persistCalls = 0;
+      Object.defineProperty(navigator.storage, "persist", {
+        configurable: true,
+        value: async () => ((w.__persistCalls += 1), true),
+      });
+    });
+    const persistCalls = () => page.evaluate(() => (window as unknown as { __persistCalls: number }).__persistCalls);
+
+    await open(page, "/settings", PASSPORT);
+    const saved = await exportBackup(page, testInfo);
+
+    // A phone with nothing on it, as after a reinstall. Nothing has asked for protection yet.
+    await injectData(page, { restaurants: [], visits: [], backfills: [] });
+    await page.reload();
+    expect(await persistCalls()).toBe(0);
+
+    // A refused file changes nothing, so it asks for nothing.
+    await page.getByLabel("Backup file").setInputFiles({ name: "notes.txt", mimeType: "text/plain", buffer: Buffer.from("hello") });
+    await expect(page.getByRole("alert")).toContainText("That file isn't a backup");
+    expect(await persistCalls()).toBe(0);
+
+    await page.getByLabel("Backup file").setInputFiles(saved.path);
+    await page.getByRole("dialog", { name: "Import this backup" }).getByRole("button", { name: "Merge" }).click();
+    await expect(toast(page, "Added what was new.")).toBeVisible();
+    await expect.poll(persistCalls).toBe(1);
+
+    await page.getByLabel("Backup file").setInputFiles(saved.path);
+    await page.getByRole("dialog", { name: "Import this backup" }).getByRole("button", { name: "Replace everything" }).click();
+    await page.getByRole("button", { name: "Yes, replace everything" }).click();
+    await expect(toast(page, "Backup restored.")).toBeVisible();
+    await expect.poll(persistCalls).toBe(2);
+  });
+
   test("a file that is not a usable backup is refused, with the passport untouched", async ({ page }) => {
     await open(page, "/settings", PASSPORT);
     const spoiled = (over: Record<string, unknown>) =>
